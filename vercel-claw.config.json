@@ -1,0 +1,23 @@
+{
+  "name": "personal-vercel-claw",
+  "appDir": "apps/vercel-claw",
+  "convexDir": "apps/vercel-claw/convex",
+  "defaultModel": "gpt-5",
+  "requiredEnvVars": [
+    "OPENAI_API_KEY",
+    "NEXT_PUBLIC_CONVEX_URL",
+    "CONVEX_DEPLOYMENT"
+  ],
+  "optionalEnvVars": [
+    "OPENAI_BASE_URL",
+    "CLAW_AGENT_MODEL",
+    "CLAW_SYSTEM_PROMPT"
+  ],
+  "selectedCliIds": [
+    "bun",
+    "git",
+    "convex",
+    "vercel"
+  ],
+  "selectedToolkitIds": []
+}

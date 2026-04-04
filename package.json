@@ -1,0 +1,19 @@
+{
+  "name": "vercel-claw",
+  "private": true,
+  "packageManager": "bun@1.3.11",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bun run --cwd apps/vercel-claw dev",
+    "dev:app": "bun run --cwd apps/vercel-claw dev",
+    "cli": "bun run --cwd apps/cli dev --",
+    "build": "bun run --cwd packages/core build && bun run --cwd apps/cli build && bun run --cwd apps/vercel-claw build",
+    "check": "bun run --cwd packages/core check && bun run --cwd apps/cli check && bun run --cwd apps/vercel-claw check"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}

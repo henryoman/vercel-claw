@@ -1,0 +1,24 @@
+{
+  "name": "@vercel-claw/app",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "check": "bunx tsc --noEmit"
+  },
+  "dependencies": {
+    "@vercel-claw/core": "workspace:*",
+    "convex": "^1.26.2",
+    "next": "^15.5.2",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.1",
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9"
+  }
+}
