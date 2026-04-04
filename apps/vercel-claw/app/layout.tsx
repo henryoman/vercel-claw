@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "vercel-claw",
-  description: "A personal Vercel + Convex deployment surface for an open claw-style agent.",
+  description: "A personal Vercel + Convex chat surface for an open claw-style agent.",
 };
 
 export default function RootLayout({

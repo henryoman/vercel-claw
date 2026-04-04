@@ -10,7 +10,10 @@
     "check": "bunx tsc --noEmit"
   },
   "dependencies": {
+    "@ai-sdk/openai": "beta",
+    "@ai-sdk/react": "beta",
     "@vercel-claw/core": "workspace:*",
+    "ai": "beta",
     "convex": "^1.26.2",
     "next": "^15.5.2",
     "react": "^19.1.1",

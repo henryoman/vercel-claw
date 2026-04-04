@@ -1,6 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "baseUrl": ".",
     "lib": [
       "ES2022",
       "DOM",
@@ -15,6 +16,11 @@
     "types": [
       "node"
     ],
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    },
     "allowJs": true,
     "incremental": true,
     "esModuleInterop": true
@@ -23,6 +29,8 @@
     "next-env.d.ts",
     "app/**/*.ts",
     "app/**/*.tsx",
+    "components/**/*.ts",
+    "components/**/*.tsx",
     "lib/**/*.ts",
     "lib/**/*.tsx",
     ".next/types/**/*.ts"
