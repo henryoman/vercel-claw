@@ -2,6 +2,8 @@ export interface ClawConfig {
   name: string;
   appDir: string;
   convexDir: string;
+  deploymentsDir: string;
+  defaultDeploymentId: string;
   defaultModel: string;
   requiredEnvVars: string[];
   optionalEnvVars: string[];
@@ -26,12 +28,58 @@ export interface ToolkitDefinition {
   recommendedCliIds: string[];
 }
 
+export const DEFAULT_DEPLOYMENTS_DIR = "deployments";
+export const DEFAULT_DEPLOYMENT_ID = "default";
+export const DEFAULT_INSTANCE_ID_PADDING = 3;
+
+export const instanceGateModes = ["member", "password", "public"] as const;
+export type InstanceGateMode = (typeof instanceGateModes)[number];
+
+export interface InstanceGateConfig {
+  mode: InstanceGateMode;
+  passwordSecretName: string | null;
+}
+
+export interface DeploymentManifest {
+  id: string;
+  label: string;
+  sharedDefaultsFile: string;
+  nextInstanceNumber: number;
+  instanceIdPadding: number;
+}
+
+export interface SharedDeploymentDefaults {
+  defaultModel: string;
+  promptFiles: string[];
+  toolsetFile: string;
+  integrations: string[];
+}
+
+export interface ToolsetManifest {
+  id: string;
+  label: string;
+  enabledToolkitIds: string[];
+}
+
+export interface InstanceManifest {
+  id: string;
+  label: string;
+  extends: "shared";
+  promptFiles: string[];
+  toolsetFile: string | null;
+  enabledToolkitIds: string[];
+  disabledToolkitIds: string[];
+  gate: InstanceGateConfig;
+}
+
 export const CLAW_CONFIG_FILE = "vercel-claw.config.json";
 
 export const defaultClawConfig: ClawConfig = {
   name: "personal-vercel-claw",
   appDir: "apps/vercel-claw",
   convexDir: "apps/vercel-claw/convex",
+  deploymentsDir: DEFAULT_DEPLOYMENTS_DIR,
+  defaultDeploymentId: DEFAULT_DEPLOYMENT_ID,
   defaultModel: "gpt-5",
   requiredEnvVars: [
     "OPENAI_API_KEY",
@@ -42,6 +90,7 @@ export const defaultClawConfig: ClawConfig = {
     "OPENAI_BASE_URL",
     "CLAW_AGENT_MODEL",
     "CLAW_SYSTEM_PROMPT",
+    "TELEGRAM_BOT_TOKEN",
   ],
   selectedCliIds: ["bun", "git", "convex", "vercel"],
   selectedToolkitIds: [],
@@ -212,6 +261,72 @@ export function createEnvTemplate(config: ClawConfig = defaultClawConfig) {
   ].join("\n");
 }
 
+export function formatInstanceKey(
+  value: number,
+  padding = DEFAULT_INSTANCE_ID_PADDING,
+) {
+  return value.toString().padStart(padding, "0");
+}
+
+export function createDeploymentManifest(
+  config: ClawConfig = defaultClawConfig,
+): DeploymentManifest {
+  return {
+    id: config.defaultDeploymentId,
+    label: "Default deployment",
+    sharedDefaultsFile: "shared/defaults.json",
+    nextInstanceNumber: 1,
+    instanceIdPadding: DEFAULT_INSTANCE_ID_PADDING,
+  };
+}
+
+export function createSharedDeploymentDefaults(
+  config: ClawConfig = defaultClawConfig,
+): SharedDeploymentDefaults {
+  return {
+    defaultModel: config.defaultModel,
+    promptFiles: ["prompts/system.md"],
+    toolsetFile: "toolsets/default.json",
+    integrations: config.selectedToolkitIds,
+  };
+}
+
+export function createDefaultToolsetManifest(
+  config: ClawConfig = defaultClawConfig,
+): ToolsetManifest {
+  return {
+    id: "default",
+    label: "Default toolset",
+    enabledToolkitIds: config.selectedToolkitIds,
+  };
+}
+
+export function createInstanceManifest(
+  instanceId = formatInstanceKey(0),
+): InstanceManifest {
+  return {
+    id: instanceId,
+    label: `Instance ${instanceId}`,
+    extends: "shared",
+    promptFiles: [],
+    toolsetFile: null,
+    enabledToolkitIds: [],
+    disabledToolkitIds: [],
+    gate: {
+      mode: "member",
+      passwordSecretName: null,
+    },
+  };
+}
+
+export function createSharedSystemPromptFile() {
+  return [
+    "# Shared system prompt",
+    "",
+    "You are vercel-claw, a concise personal AI operator.",
+  ].join("\n");
+}
+
 export function resolveCliDefinitions(config: ClawConfig = defaultClawConfig) {
   return config.selectedCliIds
     .map((id) => cliCatalog.find((entry) => entry.id === id))
@@ -266,3 +381,5 @@ export function resolveRecommendedCliIds(
 
   return Array.from(selectedCliIds);
 }
+
+export * from "./contracts";

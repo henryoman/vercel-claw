@@ -202,6 +202,17 @@ textarea,
   font-size: 0.92rem;
 }
 
+.thread-card-active {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.03));
+}
+
+.thread-meta,
+.sidebar-empty {
+  color: var(--soft);
+  font-size: 0.82rem;
+}
+
 .sidebar-footer {
   display: flex;
   flex-wrap: wrap;
@@ -451,6 +462,46 @@ textarea,
   max-width: 55%;
   text-align: right;
   font-weight: 500;
+}
+
+.settings-editor {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.settings-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.settings-input,
+.settings-textarea {
+  width: 100%;
+  border: 1px solid var(--panel-border);
+  border-radius: 0.9rem;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  padding: 0.8rem 0.9rem;
+}
+
+.settings-textarea {
+  min-height: 8rem;
+  resize: vertical;
+}
+
+.settings-save-button {
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  padding: 0.55rem 0.8rem;
+}
+
+.settings-banner {
+  margin: 0;
+  color: var(--muted);
 }
 
 .composer-error {

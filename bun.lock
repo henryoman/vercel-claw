@@ -21,6 +21,19 @@
         "@types/bun": "^1.3.11",
       },
     },
+    "apps/gateway": {
+      "name": "@vercel-claw/gateway",
+      "version": "0.0.0",
+      "dependencies": {
+        "@ai-sdk/openai": "beta",
+        "@vercel-claw/core": "workspace:*",
+        "ai": "beta",
+        "convex": "^1.26.2",
+      },
+      "devDependencies": {
+        "@types/bun": "^1.3.11",
+      },
+    },
     "apps/vercel-claw": {
       "name": "@vercel-claw/app",
       "version": "0.0.0",
@@ -195,6 +208,8 @@
     "@vercel-claw/cli": ["@vercel-claw/cli@workspace:apps/cli"],
 
     "@vercel-claw/core": ["@vercel-claw/core@workspace:packages/core"],
+
+    "@vercel-claw/gateway": ["@vercel-claw/gateway@workspace:apps/gateway"],
 
     "@vercel/oidc": ["@vercel/oidc@3.2.0", "", {}, "sha512-UycprH3T6n3jH0k44NHMa7pnFHGu/N05MjojYr+Mc6I7obkoLIJujSWwin1pCvdy/eOxrI/l3uDLQsmcrOb4ug=="],
 

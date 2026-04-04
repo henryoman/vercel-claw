@@ -1,0 +1,13 @@
+{
+  "id": "000",
+  "label": "Instance 000",
+  "extends": "shared",
+  "promptFiles": [],
+  "toolsetFile": null,
+  "enabledToolkitIds": [],
+  "disabledToolkitIds": [],
+  "gate": {
+    "mode": "member",
+    "passwordSecretName": null
+  }
+}

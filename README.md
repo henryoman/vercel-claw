@@ -46,10 +46,26 @@ The selected CLIs and toolkits are saved in `vercel-claw.config.json`, and `doct
 - Which toolkit-specific env vars are still missing
 - Whether the app and Convex directories are in place
 
+## Editable Deployment Layout
+
+The human-editable control plane now lives under `deployments/`.
+
+- `deployments/default/shared` contains deployment-wide defaults shared by every instance
+- `deployments/default/instances/000` contains per-instance overrides for the first instance
+- shared runtime code still lives in `apps/`, `packages/`, `tools/`, and `connectors/`
+
+Each instance can declare a gate mode in `instance.json`:
+
+- `"member"` is the safe default and is intended for authenticated access
+- `"password"` should only reference a secret name like `passwordSecretName`; do not commit hashes or plaintext passwords to the repo
+- `"public"` is only for intentionally open instances
+
 ## Deployment Shape
 
 1. Run `bun run cli -- init` to select CLIs and toolkits, then generate config and env scaffolding.
 2. Run `bun run cli -- doctor` to see missing binaries and missing env keys.
 3. Add `OPENAI_API_KEY`, `NEXT_PUBLIC_CONVEX_URL`, `CONVEX_DEPLOYMENT`, and any selected toolkit keys in `apps/vercel-claw/.env.local`.
-4. Run `bun run cli -- dev` for local Next.js + Convex development.
-5. Run `bun run cli -- deploy --prod` to deploy Convex first, then the Vercel app.
+4. Edit `deployments/default/shared` for deployment-wide prompts, defaults, and toolsets.
+5. Edit `deployments/default/instances/000` for per-instance overrides.
+6. Run `bun run cli -- dev` for local Next.js + Convex development.
+7. Run `bun run cli -- deploy --prod` to deploy Convex first, then the Vercel app.

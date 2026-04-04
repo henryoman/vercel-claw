@@ -1,0 +1,68 @@
+import type { TelegramWebhookRequest, TelegramWebhookResponse } from "@vercel-claw/core";
+import { sendTelegramMessage } from "@/connectors/telegram";
+import { generateThreadReply } from "./chat";
+import {
+  appendMessage,
+  createOrGetExternalThread,
+  findExternalMessage,
+} from "./threads";
+
+export async function handleTelegramWebhook(
+  payload: TelegramWebhookRequest,
+): Promise<TelegramWebhookResponse> {
+  const telegramMessage = payload.message;
+
+  if (!telegramMessage?.text?.trim()) {
+    return {
+      ok: true,
+      threadId: null,
+      reply: null,
+    };
+  }
+
+  const externalMessageId = String(telegramMessage.message_id);
+  const existingMessage = await findExternalMessage("telegram", externalMessageId);
+
+  if (existingMessage) {
+    return {
+      ok: true,
+      threadId: existingMessage.threadId,
+      reply: null,
+    };
+  }
+
+  const thread = await createOrGetExternalThread({
+    surface: "telegram",
+    externalThreadId: String(telegramMessage.chat.id),
+    externalUserId: telegramMessage.from ? String(telegramMessage.from.id) : undefined,
+    title:
+      telegramMessage.chat.title ||
+      telegramMessage.chat.username ||
+      telegramMessage.from?.first_name ||
+      "Telegram chat",
+  });
+
+  await appendMessage({
+    threadId: thread.id,
+    role: "user",
+    surface: "telegram",
+    content: telegramMessage.text,
+    externalMessageId,
+  });
+
+  const reply = await generateThreadReply(thread.id, "telegram");
+
+  if (process.env.TELEGRAM_BOT_TOKEN) {
+    await sendTelegramMessage(
+      process.env.TELEGRAM_BOT_TOKEN,
+      telegramMessage.chat.id,
+      reply.assistantMessage.content,
+    );
+  }
+
+  return {
+    ok: true,
+    threadId: thread.id,
+    reply: reply.assistantMessage.content,
+  };
+}

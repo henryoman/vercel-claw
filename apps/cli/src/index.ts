@@ -6,8 +6,14 @@ import { dirname, join, resolve } from "node:path";
 import {
   CLAW_CONFIG_FILE,
   cliCatalog,
+  createDefaultToolsetManifest,
+  createDeploymentManifest,
   createEnvTemplate,
+  createInstanceManifest,
+  createSharedDeploymentDefaults,
+  createSharedSystemPromptFile,
   defaultClawConfig,
+  formatInstanceKey,
   mergeClawConfig,
   resolveCliDefinitions,
   resolveEnvRequirements,
@@ -150,6 +156,7 @@ async function initWorkspace(root: string, args: string[]) {
 
   await ensureEnvFile(envExamplePath, config);
   await ensureEnvFile(envPath, config);
+  await ensureEditableDeploymentArea(root, config);
 
   console.log("");
   console.log("Selected toolkits:");
@@ -165,7 +172,11 @@ async function initWorkspace(root: string, args: string[]) {
   console.log("  1. Run vercel-claw doctor");
   console.log("  2. Install any missing CLIs");
   console.log("  3. Fill in apps/vercel-claw/.env.local");
-  console.log("  4. Run vercel-claw dev");
+  console.log(`  4. Edit ${config.deploymentsDir}/${config.defaultDeploymentId}/shared for deployment-wide defaults`);
+  console.log(
+    `  5. Edit ${config.deploymentsDir}/${config.defaultDeploymentId}/instances/000 for per-instance overrides`,
+  );
+  console.log("  6. Run vercel-claw dev to start Convex and the Next.js app");
 }
 
 async function ensureEnvFile(path: string, config: ClawConfig) {
@@ -188,10 +199,72 @@ async function ensureEnvFile(path: string, config: ClawConfig) {
   }
 }
 
+async function ensureEditableDeploymentArea(root: string, config: ClawConfig) {
+  const deploymentsDir = resolve(root, config.deploymentsDir);
+  const deploymentRoot = join(deploymentsDir, config.defaultDeploymentId);
+  const sharedDir = join(deploymentRoot, "shared");
+  const promptsDir = join(sharedDir, "prompts");
+  const toolsetsDir = join(sharedDir, "toolsets");
+  const instancesDir = join(deploymentRoot, "instances");
+  const firstInstanceId = formatInstanceKey(0);
+  const firstInstanceDir = join(instancesDir, firstInstanceId);
+
+  await mkdir(promptsDir, { recursive: true });
+  await mkdir(toolsetsDir, { recursive: true });
+  await mkdir(firstInstanceDir, { recursive: true });
+
+  await ensureTextFile(
+    join(deploymentsDir, "README.md"),
+    createDeploymentsReadme(config.defaultDeploymentId, firstInstanceId),
+  );
+  await ensureJsonFile(join(deploymentRoot, "deployment.json"), createDeploymentManifest(config));
+  await ensureJsonFile(join(sharedDir, "defaults.json"), createSharedDeploymentDefaults(config));
+  await ensureTextFile(join(promptsDir, "system.md"), createSharedSystemPromptFile());
+  await ensureJsonFile(join(toolsetsDir, "default.json"), createDefaultToolsetManifest(config));
+  await ensureJsonFile(join(firstInstanceDir, "instance.json"), createInstanceManifest(firstInstanceId));
+}
+
+async function ensureJsonFile(path: string, value: unknown) {
+  if (existsSync(path)) {
+    return;
+  }
+
+  await Bun.write(path, `${JSON.stringify(value, null, 2)}\n`);
+  console.log(`Created ${relativeToCwd(path)}`);
+}
+
+async function ensureTextFile(path: string, value: string) {
+  if (existsSync(path)) {
+    return;
+  }
+
+  await Bun.write(path, `${value.trimEnd()}\n`);
+  console.log(`Created ${relativeToCwd(path)}`);
+}
+
+function createDeploymentsReadme(defaultDeploymentId: string, firstInstanceId: string) {
+  return `# Editable Deployment Area
+
+This directory is the human-editable control plane for generated instances.
+
+- \`${defaultDeploymentId}/shared\` contains deployment-wide defaults shared by every instance.
+- \`${defaultDeploymentId}/instances/${firstInstanceId}\` contains per-instance overrides for the first instance.
+- Shared code still lives in \`apps/\`, \`packages/\`, \`tools/\`, and \`connectors/\`.
+
+Gate mode is configured in each \`instance.json\`.
+
+- Use \`"member"\` as the safe default for authenticated access.
+- Use \`"password"\` only with a secret reference such as \`passwordSecretName\`; do not store hashes or plaintext passwords in repo files.
+- Use \`"public"\` only for intentionally open instances.
+`;
+}
+
 async function doctor(root: string) {
   const config = await loadConfig(root);
   const appDir = resolve(root, config.appDir);
   const convexDir = resolve(root, config.convexDir);
+  const deploymentsDir = resolve(root, config.deploymentsDir);
+  const deploymentRoot = join(deploymentsDir, config.defaultDeploymentId);
   const envPath = join(appDir, ".env.local");
   const lines = existsSync(envPath) ? (await Bun.file(envPath).text()).split(/\r?\n/) : [];
   const envValues = parseEnvValues(lines);
@@ -202,6 +275,9 @@ async function doctor(root: string) {
   console.log(`Workspace root: ${root}`);
   console.log(`App dir: ${relativeToCwd(appDir)} ${existsSync(appDir) ? "OK" : "MISSING"}`);
   console.log(`Convex dir: ${relativeToCwd(convexDir)} ${existsSync(convexDir) ? "OK" : "MISSING"}`);
+  console.log(
+    `Deployments dir: ${relativeToCwd(deploymentRoot)} ${existsSync(deploymentRoot) ? "OK" : "MISSING"}`,
+  );
   console.log(`Env file: ${relativeToCwd(envPath)} ${existsSync(envPath) ? "OK" : "MISSING"}`);
   console.log("");
 
@@ -265,11 +341,19 @@ async function handleConfig(root: string, args: string[]) {
 async function dev(root: string) {
   const config = await loadConfig(root);
   const appDir = resolve(root, config.appDir);
+  const envPath = join(appDir, ".env.local");
+  const envValues = existsSync(envPath)
+    ? parseEnvValues((await Bun.file(envPath).text()).split(/\r?\n/))
+    : new Map<string, string>();
+  const childEnv = {
+    ...process.env,
+    ...Object.fromEntries(envValues.entries()),
+  };
 
-  console.log("Starting Convex and Next.js dev servers...");
+  console.log("Starting Convex and Next.js...");
 
   const convex = spawn(["bunx", "convex", "dev"], appDir);
-  const app = spawn(["bun", "run", "dev"], appDir);
+  const app = spawn(["bun", "run", "dev"], appDir, childEnv);
 
   const stop = () => {
     convex.kill();
@@ -299,9 +383,10 @@ async function deploy(root: string, args: string[]) {
   await run(vercelArgs, appDir);
 }
 
-function spawn(cmd: string[], cwd: string) {
+function spawn(cmd: string[], cwd: string, env?: Record<string, string | undefined>) {
   return Bun.spawn(cmd, {
     cwd,
+    env,
     stdin: "inherit",
     stdout: "inherit",
     stderr: "inherit",

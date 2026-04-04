@@ -2,6 +2,8 @@
   "name": "personal-vercel-claw",
   "appDir": "apps/vercel-claw",
   "convexDir": "apps/vercel-claw/convex",
+  "deploymentsDir": "deployments",
+  "defaultDeploymentId": "default",
   "defaultModel": "gpt-5",
   "requiredEnvVars": [
     "OPENAI_API_KEY",
@@ -11,7 +13,8 @@
   "optionalEnvVars": [
     "OPENAI_BASE_URL",
     "CLAW_AGENT_MODEL",
-    "CLAW_SYSTEM_PROMPT"
+    "CLAW_SYSTEM_PROMPT",
+    "TELEGRAM_BOT_TOKEN"
   ],
   "selectedCliIds": [
     "bun",
