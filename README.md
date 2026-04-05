@@ -34,7 +34,7 @@ This repo is a small Bun workspace monorepo:
 - `apps/cli`: the bootstrap and operator CLI for setup, local dev, and deploy flows
 - `packages/core`: shared config, env templates, and constants used by both
 
-Convex is treated as the source of truth for agent state, run history, artifacts, and deployment metadata. The app is the UI surface deployed to Vercel. The CLI is the local operator surface a user installs or runs with Bun.
+Convex is treated as the source of truth for agent state, run history, artifacts, and deployment metadata. The app is the UI surface deployed to Vercel and the control plane for tool execution. Enabled CLI, shell, MCP, and browser tools execute inside persistent per-instance Vercel sandboxes. The CLI is the local bootstrap, sync, dev, and deploy surface a user installs or runs with Bun.
 
 ## Install
 
@@ -80,14 +80,15 @@ The selected CLIs and toolkits are saved in `vercel-claw.config.json`, and `doct
 The human-editable control plane now lives under `deployments/`.
 
 - `deployments/default/shared` contains deployment-wide defaults shared by every instance
-- `deployments/default/installed-tools.json` is the deployment-level source of truth for which tools/plugins are installed in the repo
+- `deployments/default/installed-tools.json` is the deployment-level source of truth for which tools/plugins are enabled for the deployed sandbox runtime
 - `deployments/default/shared/context.json` is the repo-owned shared context file
 - `deployments/default/instances/000` contains per-instance overrides for the first instance
 - `deployments/default/instances/000/tools.json` is the central source of truth for which tools the model sees in that instance
 - `deployments/default/instances/000/context.json` is the repo-owned per-instance context override
 - shipped tool source code lives in `packages/tools/`
-- the CLI installs tools at the deployment level and instances only decide which installed tools to expose
+- the CLI controls deployment-level tool availability and instances only decide which deployed tools to expose
 - `bun run cli -- sync` resolves shared + instance tool/context state and pushes it into Convex
+- the deployed app resumes one persistent sandbox per instance and gives each thread its own working directory inside that sandbox
 - shared runtime code still lives in `apps/`, `packages/`, and `connectors/`
 
 Each instance can declare gate settings in `instance.json`, and the CLI syncs that deployment-owned metadata into Convex alongside tools and context.

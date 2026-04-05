@@ -145,11 +145,11 @@ async function installTool(context: ToolCommandContext, toolId: string, args: st
   await ensureCliHome();
 
   if (existing?.version === tool.version && existsSync(existing.installDir) && !options.force) {
-    summary.push(`tool ${tool.id} is already installed at ${existing.installDir}`);
+    summary.push(`tool ${tool.id} is already cached locally at ${existing.installDir}`);
   } else {
     if (existing && existing.installDir !== installDir) {
       await removeInstalledToolDirectory(existing.installDir);
-      summary.push(`removed previous version ${existing.version}`);
+      summary.push(`removed previous local cache ${existing.version}`);
     }
 
     await installToolArchive(tool, installDir);
@@ -161,7 +161,7 @@ async function installTool(context: ToolCommandContext, toolId: string, args: st
       bundleUrl: tool.bundle.url,
     };
     await writeInstalledToolState(state);
-    summary.push(`installed ${tool.id}@${tool.version} into ${installDir}`);
+    summary.push(`cached ${tool.id}@${tool.version} locally at ${installDir}`);
   }
 
   if (context.workspaceRoot) {
@@ -303,18 +303,17 @@ async function activateTool(context: ToolCommandContext, toolId: string, args: s
   const root = requireWorkspaceRoot(context);
   const options = parseToolOptions(args);
   const summary: string[] = [];
-  const state = await readInstalledToolState();
+  const registry = await loadToolRegistry(context.config);
 
   if (!options.instanceId) {
     throw new Error("Usage: vercel-claw tool activate <toolId> --instance <id>");
   }
 
-  if (!state.installedTools[toolId]) {
-    throw new Error(`Tool ${toolId} is not installed. Run \`vercel-claw tools install ${toolId}\` first.`);
-  }
+  getRequiredRegistryTool(registry, toolId);
 
   await updateWorkspaceInstalledToolsState(root, context.config, toolId, true, summary);
   await updateInstanceToolsState(root, context.config, options.instanceId, toolId, true, summary);
+  summary.push(`tool ${toolId} will execute in the deployed app sandbox runtime when enabled`);
 
   console.log(`Activated tool for instance ${options.instanceId}: ${toolId}`);
   for (const line of summary) {

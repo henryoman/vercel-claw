@@ -90,6 +90,7 @@ function normalizeToolEntry(raw: Partial<ToolRegistryEntry>): ToolRegistryEntry 
     promptHints: Array.isArray(raw.promptHints) ? raw.promptHints : [],
     recommendedConnection: raw.recommendedConnection,
     fallbackConnection: raw.fallbackConnection,
+    execution: raw.execution,
     requiredEnvVars: Array.isArray(raw.requiredEnvVars) ? raw.requiredEnvVars : [],
     optionalEnvVars: Array.isArray(raw.optionalEnvVars) ? raw.optionalEnvVars : [],
     dependencies: Array.isArray(raw.dependencies) ? raw.dependencies : [],

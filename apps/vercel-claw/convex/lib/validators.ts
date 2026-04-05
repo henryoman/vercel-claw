@@ -24,6 +24,19 @@ export const artifactKindValidator = v.union(
   v.literal("note"),
   v.literal("result"),
 );
+export const sandboxRunStatusValidator = v.union(
+  v.literal("queued"),
+  v.literal("running"),
+  v.literal("completed"),
+  v.literal("failed"),
+);
+export const sandboxRunnerValidator = v.union(
+  v.literal("browser"),
+  v.literal("shell"),
+  v.literal("cli"),
+  v.literal("stdio-mcp"),
+  v.literal("http-mcp"),
+);
 
 export const settingScopeValidator = v.union(
   v.literal("global"),
@@ -104,5 +117,31 @@ export const runtimeConfigValidator = v.object({
   installedToolIds: v.array(v.string()),
   exposedToolIds: v.array(v.string()),
   resolvedContextJson: v.string(),
+  executionMode: v.union(v.literal("metadata"), v.literal("sandbox")),
+  sandboxEnabled: v.boolean(),
+  sandboxTimeoutMs: v.number(),
+  sandboxSnapshotExpirationMs: v.union(v.number(), v.null()),
+  sandboxVcpus: v.union(v.number(), v.null()),
+  updatedAt: v.number(),
+});
+
+export const sandboxRunRecordValidator = v.object({
+  id: v.string(),
+  threadId: v.string(),
+  instanceId: v.string(),
+  toolId: v.string(),
+  operation: v.string(),
+  runner: sandboxRunnerValidator,
+  sandboxName: v.string(),
+  workingDirectory: v.string(),
+  status: sandboxRunStatusValidator,
+  commandId: v.union(v.string(), v.null()),
+  exitCode: v.union(v.number(), v.null()),
+  stdoutArtifactId: v.union(v.string(), v.null()),
+  stderrArtifactId: v.union(v.string(), v.null()),
+  resultArtifactId: v.union(v.string(), v.null()),
+  errorMessage: v.union(v.string(), v.null()),
+  startedAt: v.number(),
+  completedAt: v.union(v.number(), v.null()),
   updatedAt: v.number(),
 });

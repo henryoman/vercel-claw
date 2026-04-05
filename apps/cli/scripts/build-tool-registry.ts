@@ -60,6 +60,7 @@ async function buildRegistryEntry(tool: ToolSourceManifest): Promise<ToolRegistr
     promptHints: tool.promptHints,
     recommendedConnection: tool.recommendedConnection,
     fallbackConnection: tool.fallbackConnection,
+    execution: tool.execution,
     requiredEnvVars: tool.requiredEnvVars,
     optionalEnvVars: tool.optionalEnvVars,
     dependencies: tool.dependencies,

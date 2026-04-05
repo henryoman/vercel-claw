@@ -87,10 +87,10 @@ Commands:
   help                 Show this help
   tools list           List remote tools from the registry
   tools info ID        Show registry metadata for a tool
-  tools install ID     Download and install a tool bundle
-  tools update [ID]    Update one tool or all installed tools
-  tools remove ID      Remove an installed tool bundle
-  tools path ID        Print the installed path for a tool
+  tools install ID     Mark a tool available and optionally cache its bundle locally
+  tools update [ID]    Refresh one tool or all locally cached tool bundles
+  tools remove ID      Remove a tool from deployment config and local cache
+  tools path ID        Print the locally cached path for a tool bundle
   tools doctor         Inspect CLI tool state and registry cache
   tool ...             Alias for tools, plus workspace activate/deactivate commands
 
@@ -100,7 +100,7 @@ Workspace-only Commands:
   doctor               Inspect CLI installs, env readiness, and toolkit requirements
   config show          Print the resolved config
   config set KEY VAL   Update a config field with dot-path syntax
-  tool activate ID     Expose an installed tool to an instance
+  tool activate ID     Expose a deployment tool to an instance
   tool deactivate ID   Remove a tool from an instance
   sync                 Push repo-owned tool/context state into Convex
   dev                  Run Convex dev and Next dev together

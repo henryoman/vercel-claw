@@ -24,4 +24,95 @@ export const agentBrowserTool: ShippedToolRuntimeSpec = {
     "When browser behavior matters, inspect the tool docs and metadata first.",
     "Do not guess whether the engine is already installed.",
   ],
+  execution: {
+    runner: "browser",
+    sandbox: "required",
+    workingDirectory: "thread",
+    description: "Persistent browser automation inside the instance sandbox.",
+    supportsBackground: false,
+    operations: [
+      {
+        id: "open",
+        label: "Open page",
+        description: "Open a URL in the persistent browser session.",
+        arguments: [
+          {
+            key: "url",
+            type: "string",
+            description: "Absolute URL to open in the browser.",
+            required: true,
+          },
+        ],
+      },
+      {
+        id: "title",
+        label: "Read page title",
+        description: "Read the title of the currently open page.",
+        arguments: [],
+      },
+      {
+        id: "snapshot",
+        label: "Accessibility snapshot",
+        description: "Capture the current accessibility tree for the open page.",
+        arguments: [],
+      },
+      {
+        id: "screenshot",
+        label: "Take screenshot",
+        description: "Capture a screenshot and save it in the sandbox workspace.",
+        arguments: [],
+      },
+      {
+        id: "click",
+        label: "Click element",
+        description: "Click an element using its agent-browser reference id.",
+        arguments: [
+          {
+            key: "ref",
+            type: "string",
+            description: "The element reference id, for example @e5.",
+            required: true,
+          },
+        ],
+      },
+      {
+        id: "fill",
+        label: "Fill field",
+        description: "Fill an input or editable field using its reference id.",
+        arguments: [
+          {
+            key: "ref",
+            type: "string",
+            description: "The element reference id to fill.",
+            required: true,
+          },
+          {
+            key: "value",
+            type: "string",
+            description: "The text value to enter into the field.",
+            required: true,
+          },
+        ],
+      },
+      {
+        id: "wait",
+        label: "Wait for load",
+        description: "Wait for the page to settle before the next action.",
+        arguments: [
+          {
+            key: "loadState",
+            type: "string",
+            description: "Load state to wait for, such as load, domcontentloaded, or networkidle.",
+            required: false,
+          },
+        ],
+      },
+      {
+        id: "close",
+        label: "Close browser",
+        description: "Close the current browser session inside the sandbox.",
+        arguments: [],
+      },
+    ],
+  },
 };

@@ -21,6 +21,20 @@ const instanceGateMode = v.union(
   v.literal("password"),
   v.literal("public"),
 );
+const executionMode = v.union(v.literal("metadata"), v.literal("sandbox"));
+const sandboxRunStatus = v.union(
+  v.literal("queued"),
+  v.literal("running"),
+  v.literal("completed"),
+  v.literal("failed"),
+);
+const sandboxRunner = v.union(
+  v.literal("browser"),
+  v.literal("shell"),
+  v.literal("cli"),
+  v.literal("stdio-mcp"),
+  v.literal("http-mcp"),
+);
 
 export default defineSchema({
   deployments: defineTable({
@@ -35,6 +49,11 @@ export default defineSchema({
     deploymentId: v.string(),
     installedToolIds: v.array(v.string()),
     sharedContextJson: v.string(),
+    executionMode,
+    sandboxEnabled: v.boolean(),
+    sandboxTimeoutMs: v.number(),
+    sandboxSnapshotExpirationMs: v.union(v.number(), v.null()),
+    sandboxVcpus: v.union(v.number(), v.null()),
     updatedAt: v.number(),
   }).index("by_deployment", ["deploymentId"]),
 
@@ -111,9 +130,37 @@ export default defineSchema({
     passwordSecretName: v.optional(v.string()),
     exposedToolIds: v.array(v.string()),
     resolvedContextJson: v.string(),
+    executionMode,
+    sandboxEnabled: v.boolean(),
+    sandboxTimeoutMs: v.number(),
+    sandboxSnapshotExpirationMs: v.union(v.number(), v.null()),
+    sandboxVcpus: v.union(v.number(), v.null()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_instance", ["instanceId"])
     .index("by_deployment_and_instance", ["deploymentId", "instanceId"]),
+
+  sandboxRuns: defineTable({
+    threadId: v.id("threads"),
+    instanceId: v.string(),
+    toolId: v.string(),
+    operation: v.string(),
+    runner: sandboxRunner,
+    sandboxName: v.string(),
+    workingDirectory: v.string(),
+    status: sandboxRunStatus,
+    commandId: v.optional(v.string()),
+    exitCode: v.optional(v.number()),
+    stdoutArtifactId: v.optional(v.id("artifacts")),
+    stderrArtifactId: v.optional(v.id("artifacts")),
+    resultArtifactId: v.optional(v.id("artifacts")),
+    errorMessage: v.optional(v.string()),
+    startedAt: v.number(),
+    completedAt: v.optional(v.number()),
+    updatedAt: v.number(),
+  })
+    .index("by_thread", ["threadId"])
+    .index("by_instance_and_updated_at", ["instanceId", "updatedAt"])
+    .index("by_status_and_updated_at", ["status", "updatedAt"]),
 });

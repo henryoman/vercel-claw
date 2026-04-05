@@ -1,7 +1,10 @@
 import {
   CLAW_CONFIG_FILE,
+  DEFAULT_DEPLOYMENT_ID,
   getToolManifest,
   listToolManifests,
+  type RuntimeExecutionConfig,
+  type Surface,
   type ToolSourceManifest,
 } from "@vercel-claw/core";
 import { tool } from "ai";
@@ -10,6 +13,7 @@ import { existsSync } from "node:fs";
 import { readFile, readdir, stat } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { z } from "zod";
+import { buildToolContextIndex } from "../context-utils/tool-context";
 import {
   batchReadResultSchema,
   directoryReadResultSchema,
@@ -19,6 +23,7 @@ import {
   toolCatalogResultSchema,
   toolContextResultSchema,
 } from "./tool-contracts";
+import { createExecutableTools } from "./tool-execution";
 
 const DEFAULT_LINE_WINDOW = 220;
 const MAX_LINE_WINDOW = 400;
@@ -74,9 +79,25 @@ const workspaceRoot = resolveWorkspaceRoot(process.cwd());
 export function createAgentTools(options: {
   exposedToolIds?: string[];
   knowledgeFiles?: string[];
+  deploymentId?: string;
+  instanceId?: string;
+  threadId?: string;
+  surface?: Surface;
+  execution?: RuntimeExecutionConfig | null;
 } = {}) {
   const exposedToolIds = options.exposedToolIds ?? [];
   const knowledgeFiles = options.knowledgeFiles ?? [];
+  const executableTools =
+    options.instanceId && options.threadId && options.surface && options.execution
+      ? createExecutableTools({
+          deploymentId: options.deploymentId ?? DEFAULT_DEPLOYMENT_ID,
+          instanceId: options.instanceId,
+          threadId: options.threadId,
+          surface: options.surface,
+          execution: options.execution,
+          exposedToolIds,
+        })
+      : {};
 
   return {
     tool_catalog: tool({
@@ -114,6 +135,7 @@ export function createAgentTools(options: {
         return toolContextResultSchema.parse({
           kind: "tool-context",
           tool: toolItem,
+          index: buildToolContextIndex(manifest, requestedTargets),
           suggestedReadTargets: requestedTargets,
           guidance: Array.from(
             new Set([
@@ -150,6 +172,7 @@ export function createAgentTools(options: {
         );
       },
     }),
+    ...executableTools,
   };
 }
 
@@ -157,6 +180,7 @@ function buildToolCatalogDescription(exposedToolIds: string[]) {
   const parts = [
     "Return the shipped tool catalog as standardized JSON before you decide which tool docs to inspect.",
     "Use this first when you need to know which tools exist, which are enabled, and which files to read next.",
+    "Some shipped tools may also expose executable sandbox-backed model tools when they are enabled for the current instance.",
   ];
 
   if (exposedToolIds.length > 0) {
@@ -169,7 +193,7 @@ function buildToolCatalogDescription(exposedToolIds: string[]) {
 function buildToolContextDescription() {
   return [
     "Build a standardized context bundle for one shipped tool before you explain or rely on that tool.",
-    "Use this when you need the tool manifest, recommended read targets, docs, MCP metadata, or knowledge files.",
+    "Use this when you need the tool manifest, compact table of contents, recommended read targets, docs, MCP metadata, or knowledge files.",
     "Pass a toolId and optionally custom targets to include more exact files.",
   ].join(" ");
 }
@@ -222,6 +246,7 @@ function toToolCatalogItem(tool: ToolSourceManifest, exposedToolIds: string[]) {
     capabilities: tool.capabilities,
     contextHints: tool.contextHints,
     promptHints: tool.promptHints,
+    execution: tool.execution ?? null,
     enabled,
   };
 }

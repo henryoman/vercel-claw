@@ -1,4 +1,5 @@
 import { openai } from "@ai-sdk/openai";
+import { DEFAULT_DEPLOYMENT_ID } from "@vercel-claw/core";
 import {
   convertToModelMessages,
   generateText,
@@ -152,6 +153,11 @@ async function buildModelContext(threadId: string) {
     uiMessages,
     modelMessages,
     tools: createAgentTools({
+      deploymentId: runtimeConfig?.deploymentId ?? DEFAULT_DEPLOYMENT_ID,
+      instanceId: promptContext.thread.instanceId,
+      threadId: promptContext.thread.id,
+      surface: promptContext.thread.surface,
+      execution: runtimeConfig?.execution ?? null,
       exposedToolIds: runtimeConfig?.exposedToolIds ?? [],
       knowledgeFiles: runtimeConfig?.context.knowledgeFiles ?? [],
     }),

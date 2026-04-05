@@ -1,6 +1,7 @@
 import {
   DEFAULT_DEPLOYMENT_ID,
   createSharedContextConfig,
+  type RuntimeExecutionConfig,
   type SharedContextConfig,
 } from "@vercel-claw/core";
 import { api, getConvexClient } from "./convex";
@@ -21,6 +22,15 @@ export async function getInstanceRuntimeConfig(
   return {
     ...record,
     context: parseSharedContext(record.resolvedContextJson),
+    execution: {
+      mode: record.executionMode,
+      sandbox: {
+        enabled: record.sandboxEnabled,
+        timeoutMs: record.sandboxTimeoutMs,
+        snapshotExpirationMs: record.sandboxSnapshotExpirationMs,
+        vcpus: record.sandboxVcpus,
+      },
+    } satisfies RuntimeExecutionConfig,
   };
 }
 

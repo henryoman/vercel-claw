@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-04-05T00:40:24.263Z",
+  "generatedAt": "2026-04-05T02:49:04.769Z",
   "sourceRepo": "https://github.com/henryoman/vercel-claw",
   "tools": [
     {
@@ -9,17 +9,50 @@
       "label": "Notion",
       "description": "Hosted Notion MCP connection metadata and docs for workspace access.",
       "kind": "mcp",
+      "runtime": "mcp",
       "activationScope": "instance",
+      "docsFile": "knowledge/mcp-docs.md",
+      "mcpServerName": "notion",
+      "defaultReadTargets": [
+        "packages/tools/notion/README.md",
+        "packages/tools/notion/mcp.json",
+        "packages/tools/notion/knowledge/mcp-docs.md"
+      ],
+      "capabilities": [
+        "Hosted MCP server metadata",
+        "Workspace docs and database context",
+        "Connection instructions and fallback transport"
+      ],
+      "contextHints": [
+        "Read the MCP docs before telling the model how to connect to Notion.",
+        "Use the mcp.json config when the model needs the exact server metadata shape."
+      ],
+      "promptHints": [
+        "Prefer the hosted HTTP MCP connection when describing setup.",
+        "If transport setup is unclear, read the tool docs instead of guessing fields."
+      ],
+      "recommendedConnection": {
+        "transport": "http",
+        "url": "https://mcp.notion.com/mcp"
+      },
+      "fallbackConnection": {
+        "transport": "stdio",
+        "command": "bunx",
+        "args": [
+          "mcp-remote",
+          "https://mcp.notion.com/mcp"
+        ]
+      },
       "requiredEnvVars": [],
       "optionalEnvVars": [],
       "dependencies": [],
       "installCommands": [],
       "verifyCommands": [],
       "bundle": {
-        "url": "https://github.com/henryoman/vercel-claw/releases/download/tool-bundles/notion-0.1.0.zip",
-        "sha256": "e9079a376b63b87e0fef2df45cf9151fbe29f21be5624510c955ecbeade10394",
+        "url": "file:///Volumes/T9/cursor/vercel-claw/.dist/tool-bundles/notion-0.1.0.zip",
+        "sha256": "1e0cf974be40a0b6aca863be1e4caef647873fe784a719c4241b230748119595",
         "format": "zip",
-        "sizeBytes": 3224
+        "sizeBytes": 3576
       },
       "metadata": {
         "rootDirectory": "notion",
@@ -35,7 +68,118 @@
       "label": "Agent Browser",
       "description": "Browser automation tool powered by the agent-browser CLI.",
       "kind": "hybrid",
+      "runtime": "app",
       "activationScope": "instance",
+      "docsFile": "knowledge/about.md",
+      "defaultReadTargets": [
+        "packages/tools/agent-browser/README.md",
+        "packages/tools/agent-browser/mcp.json",
+        "packages/tools/agent-browser/knowledge/about.md"
+      ],
+      "capabilities": [
+        "Browser automation and page interaction",
+        "Install-time browser engine download",
+        "CLI and app-level browser workflows"
+      ],
+      "contextHints": [
+        "Read the tool docs before promising browser capabilities or setup steps.",
+        "Use the install commands from the manifest when describing local setup."
+      ],
+      "promptHints": [
+        "When browser behavior matters, inspect the tool docs and metadata first.",
+        "Do not guess whether the engine is already installed."
+      ],
+      "execution": {
+        "runner": "browser",
+        "sandbox": "required",
+        "workingDirectory": "thread",
+        "description": "Persistent browser automation inside the instance sandbox.",
+        "supportsBackground": false,
+        "operations": [
+          {
+            "id": "open",
+            "label": "Open page",
+            "description": "Open a URL in the persistent browser session.",
+            "arguments": [
+              {
+                "key": "url",
+                "type": "string",
+                "description": "Absolute URL to open in the browser.",
+                "required": true
+              }
+            ]
+          },
+          {
+            "id": "title",
+            "label": "Read page title",
+            "description": "Read the title of the currently open page.",
+            "arguments": []
+          },
+          {
+            "id": "snapshot",
+            "label": "Accessibility snapshot",
+            "description": "Capture the current accessibility tree for the open page.",
+            "arguments": []
+          },
+          {
+            "id": "screenshot",
+            "label": "Take screenshot",
+            "description": "Capture a screenshot and save it in the sandbox workspace.",
+            "arguments": []
+          },
+          {
+            "id": "click",
+            "label": "Click element",
+            "description": "Click an element using its agent-browser reference id.",
+            "arguments": [
+              {
+                "key": "ref",
+                "type": "string",
+                "description": "The element reference id, for example @e5.",
+                "required": true
+              }
+            ]
+          },
+          {
+            "id": "fill",
+            "label": "Fill field",
+            "description": "Fill an input or editable field using its reference id.",
+            "arguments": [
+              {
+                "key": "ref",
+                "type": "string",
+                "description": "The element reference id to fill.",
+                "required": true
+              },
+              {
+                "key": "value",
+                "type": "string",
+                "description": "The text value to enter into the field.",
+                "required": true
+              }
+            ]
+          },
+          {
+            "id": "wait",
+            "label": "Wait for load",
+            "description": "Wait for the page to settle before the next action.",
+            "arguments": [
+              {
+                "key": "loadState",
+                "type": "string",
+                "description": "Load state to wait for, such as load, domcontentloaded, or networkidle.",
+                "required": false
+              }
+            ]
+          },
+          {
+            "id": "close",
+            "label": "Close browser",
+            "description": "Close the current browser session inside the sandbox.",
+            "arguments": []
+          }
+        ]
+      },
       "requiredEnvVars": [],
       "optionalEnvVars": [],
       "dependencies": [
@@ -69,10 +213,10 @@
         }
       ],
       "bundle": {
-        "url": "https://github.com/henryoman/vercel-claw/releases/download/tool-bundles/agent-browser-0.1.0.zip",
-        "sha256": "b969bfff5df8bef614e42dd584cc097e76e944009e92c647d7a264680dcffba3",
+        "url": "file:///Volumes/T9/cursor/vercel-claw/.dist/tool-bundles/agent-browser-0.1.0.zip",
+        "sha256": "0be5f987ba9d9213d4983982c34e68e6931baa6df5e60607b0c9f2b79364a238",
         "format": "zip",
-        "sizeBytes": 2520
+        "sizeBytes": 3438
       },
       "metadata": {
         "rootDirectory": "agent-browser",

@@ -9,5 +9,12 @@
   "gate": {
     "mode": "member",
     "passwordSecretName": null
+  },
+  "execution": {
+    "mode": null,
+    "sandboxEnabled": null,
+    "timeoutMs": null,
+    "snapshotExpirationMs": null,
+    "vcpus": null
   }
 }

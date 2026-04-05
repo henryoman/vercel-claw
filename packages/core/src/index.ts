@@ -51,11 +51,35 @@ export interface DeploymentManifest {
   instanceIdPadding: number;
 }
 
+export const executionModes = ["metadata", "sandbox"] as const;
+export type ExecutionMode = (typeof executionModes)[number];
+
+export interface SandboxExecutionConfig {
+  enabled: boolean;
+  timeoutMs: number;
+  snapshotExpirationMs: number | null;
+  vcpus: number | null;
+}
+
+export interface RuntimeExecutionConfig {
+  mode: ExecutionMode;
+  sandbox: SandboxExecutionConfig;
+}
+
+export interface InstanceExecutionOverrides {
+  mode: ExecutionMode | null;
+  sandboxEnabled: boolean | null;
+  timeoutMs: number | null;
+  snapshotExpirationMs: number | null;
+  vcpus: number | null;
+}
+
 export interface SharedDeploymentDefaults {
   defaultModel: string;
   promptFiles: string[];
   toolsetFile: string;
   integrations: string[];
+  execution: RuntimeExecutionConfig;
 }
 
 export interface SharedContextConfig {
@@ -101,6 +125,7 @@ export interface InstanceManifest {
   enabledToolkitIds: string[];
   disabledToolkitIds: string[];
   gate: InstanceGateConfig;
+  execution: InstanceExecutionOverrides;
 }
 
 export const CLAW_CONFIG_FILE = "vercel-claw.config.json";
@@ -123,6 +148,9 @@ export const defaultClawConfig: ClawConfig = {
     "CLAW_AGENT_MODEL",
     "CLAW_SYSTEM_PROMPT",
     "TELEGRAM_BOT_TOKEN",
+    "VERCEL_TOKEN",
+    "VERCEL_TEAM_ID",
+    "VERCEL_PROJECT_ID",
   ],
   selectedCliIds: ["bun", "git", "convex", "vercel"],
   selectedToolkitIds: [],
@@ -256,6 +284,7 @@ export const convexTables = [
   "deploymentConfigs",
   "agents",
   "instanceConfigs",
+  "sandboxRuns",
   "threads",
   "messages",
   "artifacts",
@@ -322,6 +351,7 @@ export function createSharedDeploymentDefaults(
     promptFiles: ["prompts/system.md", "prompts/modes/default.md"],
     toolsetFile: "toolsets/default.json",
     integrations: config.selectedToolkitIds,
+    execution: createDefaultRuntimeExecutionConfig(),
   };
 }
 
@@ -410,6 +440,183 @@ export function createInstanceManifest(
     gate: {
       mode: "member",
       passwordSecretName: null,
+    },
+    execution: createDefaultInstanceExecutionOverrides(),
+  };
+}
+
+export function createDefaultRuntimeExecutionConfig(): RuntimeExecutionConfig {
+  return {
+    mode: "sandbox",
+    sandbox: {
+      enabled: true,
+      timeoutMs: 300_000,
+      snapshotExpirationMs: 7 * 24 * 60 * 60 * 1000,
+      vcpus: null,
+    },
+  };
+}
+
+export function createDefaultInstanceExecutionOverrides(): InstanceExecutionOverrides {
+  return {
+    mode: null,
+    sandboxEnabled: null,
+    timeoutMs: null,
+    snapshotExpirationMs: null,
+    vcpus: null,
+  };
+}
+
+export function normalizeSharedDeploymentDefaults(
+  partial: Partial<SharedDeploymentDefaults> | null | undefined,
+): SharedDeploymentDefaults {
+  const defaults = createSharedDeploymentDefaults();
+  const execution = normalizeRuntimeExecutionConfig(partial?.execution);
+
+  return {
+    defaultModel:
+      typeof partial?.defaultModel === "string" && partial.defaultModel.trim().length > 0
+        ? partial.defaultModel
+        : defaults.defaultModel,
+    promptFiles: Array.isArray(partial?.promptFiles)
+      ? partial.promptFiles.filter((value): value is string => typeof value === "string")
+      : defaults.promptFiles,
+    toolsetFile:
+      typeof partial?.toolsetFile === "string" && partial.toolsetFile.trim().length > 0
+        ? partial.toolsetFile
+        : defaults.toolsetFile,
+    integrations: Array.isArray(partial?.integrations)
+      ? partial.integrations.filter((value): value is string => typeof value === "string")
+      : defaults.integrations,
+    execution,
+  };
+}
+
+export function normalizeInstanceManifest(
+  partial: Partial<InstanceManifest> | null | undefined,
+  instanceId = formatInstanceKey(0),
+): InstanceManifest {
+  const defaults = createInstanceManifest(instanceId);
+
+  return {
+    id:
+      typeof partial?.id === "string" && partial.id.trim().length > 0
+        ? partial.id
+        : defaults.id,
+    label:
+      typeof partial?.label === "string" && partial.label.trim().length > 0
+        ? partial.label
+        : defaults.label,
+    extends: partial?.extends === "shared" ? "shared" : defaults.extends,
+    promptFiles: Array.isArray(partial?.promptFiles)
+      ? partial.promptFiles.filter((value): value is string => typeof value === "string")
+      : defaults.promptFiles,
+    toolsetFile:
+      typeof partial?.toolsetFile === "string"
+        ? partial.toolsetFile
+        : partial?.toolsetFile === null
+          ? null
+          : defaults.toolsetFile,
+    enabledToolkitIds: Array.isArray(partial?.enabledToolkitIds)
+      ? partial.enabledToolkitIds.filter((value): value is string => typeof value === "string")
+      : defaults.enabledToolkitIds,
+    disabledToolkitIds: Array.isArray(partial?.disabledToolkitIds)
+      ? partial.disabledToolkitIds.filter((value): value is string => typeof value === "string")
+      : defaults.disabledToolkitIds,
+    gate: {
+      mode:
+        partial?.gate?.mode === "member" ||
+        partial?.gate?.mode === "password" ||
+        partial?.gate?.mode === "public"
+          ? partial.gate.mode
+          : defaults.gate.mode,
+      passwordSecretName:
+        typeof partial?.gate?.passwordSecretName === "string"
+          ? partial.gate.passwordSecretName
+          : partial?.gate?.passwordSecretName === null
+            ? null
+            : defaults.gate.passwordSecretName,
+    },
+    execution: normalizeInstanceExecutionOverrides(partial?.execution),
+  };
+}
+
+export function normalizeRuntimeExecutionConfig(
+  partial: Partial<RuntimeExecutionConfig> | null | undefined,
+): RuntimeExecutionConfig {
+  const defaults = createDefaultRuntimeExecutionConfig();
+
+  return {
+    mode: partial?.mode === "metadata" || partial?.mode === "sandbox" ? partial.mode : defaults.mode,
+    sandbox: {
+      enabled:
+        typeof partial?.sandbox?.enabled === "boolean"
+          ? partial.sandbox.enabled
+          : defaults.sandbox.enabled,
+      timeoutMs:
+        typeof partial?.sandbox?.timeoutMs === "number" && Number.isFinite(partial.sandbox.timeoutMs)
+          ? partial.sandbox.timeoutMs
+          : defaults.sandbox.timeoutMs,
+      snapshotExpirationMs:
+        typeof partial?.sandbox?.snapshotExpirationMs === "number" &&
+        Number.isFinite(partial.sandbox.snapshotExpirationMs)
+          ? partial.sandbox.snapshotExpirationMs
+          : partial?.sandbox?.snapshotExpirationMs === null
+            ? null
+            : defaults.sandbox.snapshotExpirationMs,
+      vcpus:
+        typeof partial?.sandbox?.vcpus === "number" && Number.isFinite(partial.sandbox.vcpus)
+          ? partial.sandbox.vcpus
+          : partial?.sandbox?.vcpus === null
+            ? null
+            : defaults.sandbox.vcpus,
+    },
+  };
+}
+
+export function normalizeInstanceExecutionOverrides(
+  partial: Partial<InstanceExecutionOverrides> | null | undefined,
+): InstanceExecutionOverrides {
+  const defaults = createDefaultInstanceExecutionOverrides();
+
+  return {
+    mode: partial?.mode === "metadata" || partial?.mode === "sandbox" ? partial.mode : defaults.mode,
+    sandboxEnabled:
+      typeof partial?.sandboxEnabled === "boolean" ? partial.sandboxEnabled : defaults.sandboxEnabled,
+    timeoutMs:
+      typeof partial?.timeoutMs === "number" && Number.isFinite(partial.timeoutMs)
+        ? partial.timeoutMs
+        : partial?.timeoutMs === null
+          ? null
+          : defaults.timeoutMs,
+    snapshotExpirationMs:
+      typeof partial?.snapshotExpirationMs === "number" &&
+      Number.isFinite(partial.snapshotExpirationMs)
+        ? partial.snapshotExpirationMs
+        : partial?.snapshotExpirationMs === null
+          ? null
+          : defaults.snapshotExpirationMs,
+    vcpus:
+      typeof partial?.vcpus === "number" && Number.isFinite(partial.vcpus)
+        ? partial.vcpus
+        : partial?.vcpus === null
+          ? null
+          : defaults.vcpus,
+  };
+}
+
+export function resolveRuntimeExecutionConfig(
+  shared: RuntimeExecutionConfig,
+  overrides: InstanceExecutionOverrides,
+): RuntimeExecutionConfig {
+  return {
+    mode: overrides.mode ?? shared.mode,
+    sandbox: {
+      enabled: overrides.sandboxEnabled ?? shared.sandbox.enabled,
+      timeoutMs: overrides.timeoutMs ?? shared.sandbox.timeoutMs,
+      snapshotExpirationMs:
+        overrides.snapshotExpirationMs ?? shared.sandbox.snapshotExpirationMs,
+      vcpus: overrides.vcpus ?? shared.sandbox.vcpus,
     },
   };
 }

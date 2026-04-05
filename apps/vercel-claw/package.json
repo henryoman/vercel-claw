@@ -13,6 +13,7 @@
     "@ai-sdk/openai": "beta",
     "@ai-sdk/react": "beta",
     "@vercel-claw/core": "workspace:*",
+    "@vercel/sandbox": "^2.0.0-beta.11",
     "ai": "beta",
     "convex": "^1.26.2",
     "next": "^15.5.2",

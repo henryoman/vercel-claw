@@ -3,6 +3,15 @@ export type ShippedToolActivationScope = "shared" | "instance" | "both";
 export type ShippedToolInstallTarget = "app" | "cli";
 export type ShippedToolWorkingDirectory = "workspace" | "app" | "cli";
 export type ShippedToolRuntime = "mcp" | "app" | "metadata";
+export type ShippedToolExecutionRunner =
+  | "browser"
+  | "shell"
+  | "cli"
+  | "stdio-mcp"
+  | "http-mcp";
+export type ShippedToolSandboxMode = "required" | "preferred" | "never";
+export type ShippedToolExecutionWorkingDirectory = "instance" | "thread";
+export type ShippedToolExecutionArgumentType = "string" | "number" | "boolean";
 
 export interface ShippedToolPackageDependency {
   target: ShippedToolInstallTarget;
@@ -37,6 +46,29 @@ export interface ShippedToolConnectionSpec {
   args?: string[];
 }
 
+export interface ShippedToolExecutionArgumentSpec {
+  key: string;
+  type: ShippedToolExecutionArgumentType;
+  description: string;
+  required: boolean;
+}
+
+export interface ShippedToolExecutionOperationSpec {
+  id: string;
+  label: string;
+  description: string;
+  arguments: ShippedToolExecutionArgumentSpec[];
+}
+
+export interface ShippedToolExecutionSpec {
+  runner: ShippedToolExecutionRunner;
+  sandbox: ShippedToolSandboxMode;
+  workingDirectory: ShippedToolExecutionWorkingDirectory;
+  description: string;
+  supportsBackground: boolean;
+  operations: ShippedToolExecutionOperationSpec[];
+}
+
 export interface ShippedToolRuntimeSpec {
   id: string;
   label: string;
@@ -50,4 +82,5 @@ export interface ShippedToolRuntimeSpec {
   promptHints: string[];
   recommendedConnection?: ShippedToolConnectionSpec;
   fallbackConnection?: ShippedToolConnectionSpec;
+  execution?: ShippedToolExecutionSpec;
 }

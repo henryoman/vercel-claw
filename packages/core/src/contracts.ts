@@ -13,6 +13,9 @@ export type SettingScope = (typeof settingScopes)[number];
 export const artifactKinds = ["file", "note", "result"] as const;
 export type ArtifactKind = (typeof artifactKinds)[number];
 
+export const sandboxRunStatuses = ["queued", "running", "completed", "failed"] as const;
+export type SandboxRunStatus = (typeof sandboxRunStatuses)[number];
+
 export const DEFAULT_AGENT_SLUG = "default";
 export const DEFAULT_INSTANCE_ID = "000";
 
@@ -66,6 +69,44 @@ export interface ArtifactRecord {
   storageId: string | null;
   externalArtifactId: string | null;
   createdAt: number;
+}
+
+export interface RuntimeConfigRecord {
+  deploymentId: string;
+  instanceId: string;
+  label: string;
+  gateMode: "member" | "password" | "public";
+  passwordSecretName: string | null;
+  installedToolIds: string[];
+  exposedToolIds: string[];
+  resolvedContextJson: string;
+  executionMode: "metadata" | "sandbox";
+  sandboxEnabled: boolean;
+  sandboxTimeoutMs: number;
+  sandboxSnapshotExpirationMs: number | null;
+  sandboxVcpus: number | null;
+  updatedAt: number;
+}
+
+export interface SandboxRunRecord {
+  id: string;
+  threadId: string;
+  instanceId: string;
+  toolId: string;
+  operation: string;
+  runner: "browser" | "shell" | "cli" | "stdio-mcp" | "http-mcp";
+  sandboxName: string;
+  workingDirectory: string;
+  status: SandboxRunStatus;
+  commandId: string | null;
+  exitCode: number | null;
+  stdoutArtifactId: string | null;
+  stderrArtifactId: string | null;
+  resultArtifactId: string | null;
+  errorMessage: string | null;
+  startedAt: number;
+  completedAt: number | null;
+  updatedAt: number;
 }
 
 export interface CreateThreadRequest {

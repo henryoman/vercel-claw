@@ -81,6 +81,11 @@ export function formatEnabledToolsPromptSection(
       if (tool.mcpServerName) {
         detailParts.push(`MCP ${tool.mcpServerName}`);
       }
+      if (tool.execution) {
+        detailParts.push(
+          `${tool.execution.runner} via ${tool.execution.sandbox === "never" ? "direct app runtime" : "persistent sandbox"}`,
+        );
+      }
 
       const capabilitySummary = tool.capabilities
         .slice(0, 3)

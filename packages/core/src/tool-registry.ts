@@ -6,6 +6,7 @@ import type {
   ShippedToolPackageDependency,
   ShippedToolRuntime,
   ShippedToolConnectionSpec,
+  ShippedToolExecutionSpec,
 } from "../../tools/manifest-types";
 
 export const DEFAULT_TOOL_REGISTRY_URL =
@@ -43,6 +44,7 @@ export interface ToolRuntimeMetadata {
   promptHints: string[];
   recommendedConnection?: ShippedToolConnectionSpec;
   fallbackConnection?: ShippedToolConnectionSpec;
+  execution?: ShippedToolExecutionSpec;
 }
 
 export interface ToolSourceManifest extends ShippedToolInstallSpec, ToolRuntimeMetadata {

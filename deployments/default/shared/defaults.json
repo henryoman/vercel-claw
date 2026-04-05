@@ -5,5 +5,14 @@
     "prompts/modes/default.md"
   ],
   "toolsetFile": "toolsets/default.json",
-  "integrations": []
+  "integrations": [],
+  "execution": {
+    "mode": "sandbox",
+    "sandbox": {
+      "enabled": true,
+      "timeoutMs": 300000,
+      "snapshotExpirationMs": 604800000,
+      "vcpus": null
+    }
+  }
 }

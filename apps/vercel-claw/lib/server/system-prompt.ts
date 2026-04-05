@@ -13,6 +13,7 @@ const TOOL_WORKFLOW_SECTION = [
   "Tool workflow:",
   "- Before you describe a shipped tool, call `tool_catalog` or `tool_context` to inspect the real typed metadata for that tool.",
   "- Before you rely on docs, prompts, configs, or source files, call `read` instead of guessing.",
+  "- When an enabled shipped tool exposes an executable model tool, use that executable tool instead of inventing sandbox commands yourself.",
   "- Use `tool_catalog` to discover which tools exist, which are enabled, and which read targets to inspect next.",
   "- Use `tool_context` to fetch a standardized context bundle for one tool, including its manifest, recommended read targets, and important docs.",
   "- Use `read` with `{ \"target\": \"...\" }` for one file or `{ \"targets\": [\"...\", \"...\"] }` to inspect several files before answering.",

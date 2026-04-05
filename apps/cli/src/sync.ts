@@ -10,6 +10,9 @@ import {
   createInstanceManifest,
   createSharedContextConfig,
   createSharedDeploymentDefaults,
+  normalizeInstanceManifest,
+  normalizeSharedDeploymentDefaults,
+  resolveRuntimeExecutionConfig,
   resolveContextConfig,
   type ClawConfig,
   type ContextConfig,
@@ -40,14 +43,18 @@ export async function handleSyncCommand(root: string, config: ClawConfig) {
 
   const [installedTools, sharedDefaults, sharedContext] = await Promise.all([
     readJsonFile<InstalledToolsManifest>(installedToolsPath, createDefaultInstalledToolsManifest()),
-    readJsonFile<SharedDeploymentDefaults>(
+    readJsonFile<Partial<SharedDeploymentDefaults>>(
       sharedDefaultsPath,
       createSharedDeploymentDefaults(config),
     ),
     readJsonFile<SharedContextConfig>(sharedContextPath, createSharedContextConfig()),
   ]);
+  const normalizedSharedDefaults = normalizeSharedDeploymentDefaults(sharedDefaults);
   const defaultSharedPrompt = createSharedContextConfig().systemPrompt;
-  const sharedPromptFileContents = await readPromptFiles(deploymentRoot, sharedDefaults.promptFiles);
+  const sharedPromptFileContents = await readPromptFiles(
+    deploymentRoot,
+    normalizedSharedDefaults.promptFiles,
+  );
   const resolvedSharedContext: SharedContextConfig = {
     ...sharedContext,
     systemPrompt: composeResolvedSystemPrompt({
@@ -62,6 +69,12 @@ export async function handleSyncCommand(root: string, config: ClawConfig) {
     deploymentId: config.defaultDeploymentId,
     installedToolIds: installedTools.installedToolIds,
     sharedContextJson: JSON.stringify(resolvedSharedContext),
+    executionMode: normalizedSharedDefaults.execution.mode,
+    sandboxEnabled: normalizedSharedDefaults.execution.sandbox.enabled,
+    sandboxTimeoutMs: normalizedSharedDefaults.execution.sandbox.timeoutMs,
+    sandboxSnapshotExpirationMs:
+      normalizedSharedDefaults.execution.sandbox.snapshotExpirationMs,
+    sandboxVcpus: normalizedSharedDefaults.execution.sandbox.vcpus,
   });
 
   const instanceDirs = existsSync(instancesRoot)
@@ -73,10 +86,11 @@ export async function handleSyncCommand(root: string, config: ClawConfig) {
 
   for (const instanceId of instanceDirs) {
     const instanceRoot = join(instancesRoot, instanceId);
-    const instanceManifest = await readJsonFile<InstanceManifest>(
+    const rawInstanceManifest = await readJsonFile<Partial<InstanceManifest>>(
       join(instanceRoot, "instance.json"),
       createInstanceManifest(instanceId),
     );
+    const instanceManifest = normalizeInstanceManifest(rawInstanceManifest, instanceId);
     const toolsConfig = await readJsonFile<ToolsConfig>(
       join(instanceRoot, "tools.json"),
       createDefaultToolsConfig(),
@@ -90,10 +104,23 @@ export async function handleSyncCommand(root: string, config: ClawConfig) {
       instanceManifest.promptFiles,
     );
 
+    const droppedToolIds = toolsConfig.exposedToolIds.filter(
+      (toolId) => !installedTools.installedToolIds.includes(toolId),
+    );
+    if (droppedToolIds.length > 0) {
+      console.warn(
+        `Instance ${instanceId} exposes tools that are not installed for the deployment and will be skipped: ${droppedToolIds.join(", ")}`,
+      );
+    }
+
     const exposedToolIds = toolsConfig.exposedToolIds.filter((toolId) =>
       installedTools.installedToolIds.includes(toolId),
     );
     const resolvedContext = resolveContextConfig(resolvedSharedContext, instanceContext);
+    const resolvedExecution = resolveRuntimeExecutionConfig(
+      normalizedSharedDefaults.execution,
+      instanceManifest.execution,
+    );
     resolvedContext.systemPrompt = composeResolvedSystemPrompt({
       sharedBasePrompt: resolvedSharedContext.systemPrompt,
       sharedPromptFileContents: [],
@@ -111,6 +138,11 @@ export async function handleSyncCommand(root: string, config: ClawConfig) {
       passwordSecretName: instanceManifest.gate.passwordSecretName ?? undefined,
       exposedToolIds,
       resolvedContextJson: JSON.stringify(resolvedContext),
+      executionMode: resolvedExecution.mode,
+      sandboxEnabled: resolvedExecution.sandbox.enabled,
+      sandboxTimeoutMs: resolvedExecution.sandbox.timeoutMs,
+      sandboxSnapshotExpirationMs: resolvedExecution.sandbox.snapshotExpirationMs,
+      sandboxVcpus: resolvedExecution.sandbox.vcpus,
     });
 
     console.log(`Synced instance ${instanceId}`);

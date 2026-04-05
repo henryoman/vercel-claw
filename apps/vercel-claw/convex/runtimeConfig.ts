@@ -13,6 +13,11 @@ export const syncDeployment = mutation({
     deploymentId: v.string(),
     installedToolIds: v.array(v.string()),
     sharedContextJson: v.string(),
+    executionMode: v.union(v.literal("metadata"), v.literal("sandbox")),
+    sandboxEnabled: v.boolean(),
+    sandboxTimeoutMs: v.number(),
+    sandboxSnapshotExpirationMs: v.union(v.number(), v.null()),
+    sandboxVcpus: v.union(v.number(), v.null()),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -27,6 +32,11 @@ export const syncDeployment = mutation({
       await ctx.db.patch(existing._id, {
         installedToolIds: args.installedToolIds,
         sharedContextJson: args.sharedContextJson,
+        executionMode: args.executionMode,
+        sandboxEnabled: args.sandboxEnabled,
+        sandboxTimeoutMs: args.sandboxTimeoutMs,
+        sandboxSnapshotExpirationMs: args.sandboxSnapshotExpirationMs,
+        sandboxVcpus: args.sandboxVcpus,
         updatedAt,
       });
       return null;
@@ -36,6 +46,11 @@ export const syncDeployment = mutation({
       deploymentId: args.deploymentId,
       installedToolIds: args.installedToolIds,
       sharedContextJson: args.sharedContextJson,
+      executionMode: args.executionMode,
+      sandboxEnabled: args.sandboxEnabled,
+      sandboxTimeoutMs: args.sandboxTimeoutMs,
+      sandboxSnapshotExpirationMs: args.sandboxSnapshotExpirationMs,
+      sandboxVcpus: args.sandboxVcpus,
       updatedAt,
     });
     return null;
@@ -51,6 +66,11 @@ export const syncInstance = mutation({
     passwordSecretName: v.optional(v.string()),
     exposedToolIds: v.array(v.string()),
     resolvedContextJson: v.string(),
+    executionMode: v.union(v.literal("metadata"), v.literal("sandbox")),
+    sandboxEnabled: v.boolean(),
+    sandboxTimeoutMs: v.number(),
+    sandboxSnapshotExpirationMs: v.union(v.number(), v.null()),
+    sandboxVcpus: v.union(v.number(), v.null()),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -69,6 +89,11 @@ export const syncInstance = mutation({
         passwordSecretName: args.passwordSecretName,
         exposedToolIds: args.exposedToolIds,
         resolvedContextJson: args.resolvedContextJson,
+        executionMode: args.executionMode,
+        sandboxEnabled: args.sandboxEnabled,
+        sandboxTimeoutMs: args.sandboxTimeoutMs,
+        sandboxSnapshotExpirationMs: args.sandboxSnapshotExpirationMs,
+        sandboxVcpus: args.sandboxVcpus,
         updatedAt,
       });
       return null;
@@ -82,6 +107,11 @@ export const syncInstance = mutation({
       passwordSecretName: args.passwordSecretName,
       exposedToolIds: args.exposedToolIds,
       resolvedContextJson: args.resolvedContextJson,
+      executionMode: args.executionMode,
+      sandboxEnabled: args.sandboxEnabled,
+      sandboxTimeoutMs: args.sandboxTimeoutMs,
+      sandboxSnapshotExpirationMs: args.sandboxSnapshotExpirationMs,
+      sandboxVcpus: args.sandboxVcpus,
       createdAt: updatedAt,
       updatedAt,
     });
@@ -121,6 +151,11 @@ export const getForInstance = query({
       installedToolIds: deploymentConfig.installedToolIds,
       exposedToolIds: instanceConfig.exposedToolIds,
       resolvedContextJson: instanceConfig.resolvedContextJson,
+      executionMode: instanceConfig.executionMode,
+      sandboxEnabled: instanceConfig.sandboxEnabled,
+      sandboxTimeoutMs: instanceConfig.sandboxTimeoutMs,
+      sandboxSnapshotExpirationMs: instanceConfig.sandboxSnapshotExpirationMs ?? null,
+      sandboxVcpus: instanceConfig.sandboxVcpus ?? null,
       updatedAt: Math.max(deploymentConfig.updatedAt, instanceConfig.updatedAt),
     };
   },
