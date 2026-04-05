@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
-import type { SettingRecord, ThreadDetail, ThreadMessage, ThreadSummary } from "@vercel-claw/core";
+import { DEFAULT_INSTANCE_ID, type SettingRecord, type ThreadDetail, type ThreadMessage, type ThreadSummary } from "@vercel-claw/core";
 import {
   Conversation,
   ConversationContent,
@@ -162,7 +162,7 @@ export function ChatShell() {
     setLoadingThreads(true);
 
     try {
-      const response = await fetch("/api/threads");
+      const response = await fetch(`/api/threads?instanceId=${DEFAULT_INSTANCE_ID}`);
       const payload = (await response.json()) as { threads?: ThreadSummary[]; error?: string };
 
       if (!response.ok) {
@@ -209,6 +209,7 @@ export function ChatShell() {
         },
         body: JSON.stringify({
           title,
+          instanceId: DEFAULT_INSTANCE_ID,
           surface: "web",
         }),
       });
@@ -542,7 +543,7 @@ export function ChatShell() {
                   </div>
                   <div className="settings-row">
                     <span>Chat runtime</span>
-                    <strong>Gateway + Convex</strong>
+                    <strong>Next.js + Convex</strong>
                   </div>
                 </div>
               </article>
@@ -562,8 +563,8 @@ export function ChatShell() {
                   </strong>
                 </div>
                 <div className="settings-row">
-                  <span>Gateway</span>
-                  <strong>Configured through server env</strong>
+                  <span>Instance</span>
+                  <strong>{DEFAULT_INSTANCE_ID}</strong>
                 </div>
               </div>
               {settingsNotice ? <p className="settings-banner">{settingsNotice}</p> : null}

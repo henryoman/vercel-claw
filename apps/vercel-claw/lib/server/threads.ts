@@ -7,18 +7,20 @@ import type {
   ThreadSummary,
 } from "@vercel-claw/core";
 import { api, getConvexClient } from "./convex";
+import type { Id } from "@/convex/_generated/dataModel";
 
-export async function listThreads(limit = 20): Promise<ThreadSummary[]> {
-  return await getConvexClient().query(api.threads.list, { limit });
+export async function listThreads(limit = 20, instanceId?: string): Promise<ThreadSummary[]> {
+  return await getConvexClient().query(api.threads.list, { limit, instanceId });
 }
 
 export async function getThreadDetail(threadId: string): Promise<ThreadDetail | null> {
-  return await getConvexClient().query(api.threads.get, { threadId });
+  return await getConvexClient().query(api.threads.get, { threadId: asThreadId(threadId) });
 }
 
 export async function createThread(input: CreateThreadRequest): Promise<ThreadSummary> {
   return await getConvexClient().mutation(api.threads.create, {
     title: input.title,
+    instanceId: input.instanceId,
     surface: input.surface,
     agentSlug: input.agentSlug,
     externalThreadId: input.externalThreadId,
@@ -27,6 +29,7 @@ export async function createThread(input: CreateThreadRequest): Promise<ThreadSu
 }
 
 export async function createOrGetExternalThread(input: {
+  instanceId: string;
   surface: Surface;
   externalThreadId: string;
   externalUserId?: string;
@@ -34,6 +37,7 @@ export async function createOrGetExternalThread(input: {
   agentSlug?: string;
 }): Promise<ThreadSummary> {
   return await getConvexClient().mutation(api.threads.createOrGetExternal, {
+    instanceId: input.instanceId,
     surface: input.surface,
     externalThreadId: input.externalThreadId,
     externalUserId: input.externalUserId,
@@ -51,7 +55,7 @@ export async function appendMessage(input: {
   createdAt?: number;
 }): Promise<ThreadMessage> {
   return await getConvexClient().mutation(api.threads.appendMessage, {
-    threadId: input.threadId,
+    threadId: asThreadId(input.threadId),
     role: input.role,
     surface: input.surface,
     content: input.content,
@@ -65,7 +69,7 @@ export async function updateThreadStatus(
   status: ThreadStatus,
 ): Promise<ThreadSummary> {
   return await getConvexClient().mutation(api.threads.updateStatus, {
-    threadId,
+    threadId: asThreadId(threadId),
     status,
   });
 }
@@ -81,5 +85,11 @@ export async function findExternalMessage(
 }
 
 export async function getPromptContext(threadId: string) {
-  return await getConvexClient().query(api.threads.getPromptContext, { threadId });
+  return await getConvexClient().query(api.threads.getPromptContext, {
+    threadId: asThreadId(threadId),
+  });
+}
+
+function asThreadId(threadId: string): Id<"threads"> {
+  return threadId as Id<"threads">;
 }

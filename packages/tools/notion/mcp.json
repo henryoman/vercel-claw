@@ -1,0 +1,15 @@
+{
+  "id": "notion",
+  "label": "Notion",
+  "kind": "mcp",
+  "serverName": "notion",
+  "description": "Hosted Notion MCP connection metadata and docs for workspace access.",
+  "connection": {
+    "transport": "http",
+    "url": "https://mcp.notion.com/mcp"
+  },
+  "fallbackConnection": {
+    "command": "bunx",
+    "args": ["mcp-remote", "https://mcp.notion.com/mcp"]
+  }
+}

@@ -1,4 +1,4 @@
-import type { TelegramWebhookRequest, TelegramWebhookResponse } from "@vercel-claw/core";
+import { DEFAULT_INSTANCE_ID, type TelegramWebhookRequest, type TelegramWebhookResponse } from "@vercel-claw/core";
 import { sendTelegramMessage } from "@/connectors/telegram";
 import { generateThreadReply } from "./chat";
 import {
@@ -32,6 +32,7 @@ export async function handleTelegramWebhook(
   }
 
   const thread = await createOrGetExternalThread({
+    instanceId: DEFAULT_INSTANCE_ID,
     surface: "telegram",
     externalThreadId: String(telegramMessage.chat.id),
     externalUserId: telegramMessage.from ? String(telegramMessage.from.id) : undefined,

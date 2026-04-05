@@ -29,10 +29,11 @@ export const createText = mutation({
   },
   returns: artifactRecordValidator,
   handler: async (ctx, args) => {
-    await getThreadOrThrow(ctx, args.threadId);
+    const thread = await getThreadOrThrow(ctx, args.threadId);
 
     const artifactId = await ctx.db.insert("artifacts", {
       threadId: args.threadId,
+      instanceId: thread.instanceId,
       kind: args.kind,
       label: args.label,
       surface: args.surface,

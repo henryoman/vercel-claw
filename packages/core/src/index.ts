@@ -55,10 +55,38 @@ export interface SharedDeploymentDefaults {
   integrations: string[];
 }
 
+export interface SharedContextConfig {
+  version: number;
+  systemPrompt: string;
+  instructions: string[];
+  knowledgeFiles: string[];
+  notes: string[];
+}
+
+export interface ContextConfig {
+  version: number;
+  inheritsShared: boolean;
+  systemPrompt: string | null;
+  instructions: string[];
+  knowledgeFiles: string[];
+  notes: string[];
+}
+
 export interface ToolsetManifest {
   id: string;
   label: string;
   enabledToolkitIds: string[];
+}
+
+export interface ToolsConfig {
+  version: number;
+  mode: "allowlist";
+  exposedToolIds: string[];
+}
+
+export interface InstalledToolsManifest {
+  version: number;
+  installedToolIds: string[];
 }
 
 export interface InstanceManifest {
@@ -221,7 +249,9 @@ export const toolkitCatalog: ToolkitDefinition[] = [
 
 export const convexTables = [
   "deployments",
+  "deploymentConfigs",
   "agents",
+  "instanceConfigs",
   "threads",
   "messages",
   "artifacts",
@@ -291,6 +321,50 @@ export function createSharedDeploymentDefaults(
   };
 }
 
+export function createSharedContextConfig(): SharedContextConfig {
+  return {
+    version: 1,
+    systemPrompt: "You are vercel-claw, a concise personal AI operator.",
+    instructions: [],
+    knowledgeFiles: [],
+    notes: [],
+  };
+}
+
+export function createInstanceContextConfig(): ContextConfig {
+  return {
+    version: 1,
+    inheritsShared: true,
+    systemPrompt: null,
+    instructions: [],
+    knowledgeFiles: [],
+    notes: [],
+  };
+}
+
+export function resolveContextConfig(
+  shared: SharedContextConfig,
+  instance: ContextConfig,
+): SharedContextConfig {
+  if (!instance.inheritsShared) {
+    return {
+      version: Math.max(shared.version, instance.version),
+      systemPrompt: instance.systemPrompt ?? shared.systemPrompt,
+      instructions: uniqueStrings([...instance.instructions]),
+      knowledgeFiles: uniqueStrings([...instance.knowledgeFiles]),
+      notes: uniqueStrings([...instance.notes]),
+    };
+  }
+
+  return {
+    version: Math.max(shared.version, instance.version),
+    systemPrompt: instance.systemPrompt ?? shared.systemPrompt,
+    instructions: uniqueStrings([...shared.instructions, ...instance.instructions]),
+    knowledgeFiles: uniqueStrings([...shared.knowledgeFiles, ...instance.knowledgeFiles]),
+    notes: uniqueStrings([...shared.notes, ...instance.notes]),
+  };
+}
+
 export function createDefaultToolsetManifest(
   config: ClawConfig = defaultClawConfig,
 ): ToolsetManifest {
@@ -298,6 +372,23 @@ export function createDefaultToolsetManifest(
     id: "default",
     label: "Default toolset",
     enabledToolkitIds: config.selectedToolkitIds,
+  };
+}
+
+export function createDefaultToolsConfig(exposedToolIds: string[] = []): ToolsConfig {
+  return {
+    version: 1,
+    mode: "allowlist",
+    exposedToolIds,
+  };
+}
+
+export function createDefaultInstalledToolsManifest(
+  installedToolIds: string[] = [],
+): InstalledToolsManifest {
+  return {
+    version: 1,
+    installedToolIds,
   };
 }
 
@@ -382,4 +473,9 @@ export function resolveRecommendedCliIds(
   return Array.from(selectedCliIds);
 }
 
+function uniqueStrings(values: string[]) {
+  return Array.from(new Set(values));
+}
+
 export * from "./contracts";
+export * from "./tool-manifests";

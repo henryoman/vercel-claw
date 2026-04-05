@@ -34,6 +34,7 @@ export const settingScopeValidator = v.union(
 export const threadSummaryValidator = v.object({
   id: v.string(),
   agentId: v.string(),
+  instanceId: v.string(),
   title: v.string(),
   status: threadStatusValidator,
   surface: surfaceValidator,
@@ -47,6 +48,7 @@ export const threadSummaryValidator = v.object({
 export const threadMessageValidator = v.object({
   id: v.string(),
   threadId: v.string(),
+  instanceId: v.string(),
   role: messageRoleValidator,
   surface: surfaceValidator,
   content: v.string(),
@@ -71,6 +73,7 @@ export const settingRecordValidator = v.object({
 export const artifactRecordValidator = v.object({
   id: v.string(),
   threadId: v.string(),
+  instanceId: v.string(),
   kind: artifactKindValidator,
   label: v.string(),
   surface: surfaceValidator,
@@ -90,4 +93,16 @@ export const promptContextValidator = v.object({
     systemPrompt: v.string(),
   }),
   messages: v.array(threadMessageValidator),
+});
+
+export const runtimeConfigValidator = v.object({
+  deploymentId: v.string(),
+  instanceId: v.string(),
+  label: v.string(),
+  gateMode: v.union(v.literal("member"), v.literal("password"), v.literal("public")),
+  passwordSecretName: v.union(v.string(), v.null()),
+  installedToolIds: v.array(v.string()),
+  exposedToolIds: v.array(v.string()),
+  resolvedContextJson: v.string(),
+  updatedAt: v.number(),
 });

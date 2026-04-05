@@ -1,0 +1,11 @@
+{
+  "id": "example-tool",
+  "label": "Example Tool",
+  "kind": "mcp",
+  "serverName": "example-tool",
+  "description": "Example layout for a shipped tool folder.",
+  "connection": {
+    "transport": "http",
+    "url": "https://example.com/mcp"
+  }
+}

@@ -16,6 +16,11 @@ const messageRole = v.union(
 );
 const artifactKind = v.union(v.literal("file"), v.literal("note"), v.literal("result"));
 const settingScope = v.union(v.literal("global"), v.literal("web"), v.literal("telegram"));
+const instanceGateMode = v.union(
+  v.literal("member"),
+  v.literal("password"),
+  v.literal("public"),
+);
 
 export default defineSchema({
   deployments: defineTable({
@@ -25,6 +30,13 @@ export default defineSchema({
     vercelProjectId: v.optional(v.string()),
     updatedAt: v.number(),
   }).index("by_environment", ["environment"]),
+
+  deploymentConfigs: defineTable({
+    deploymentId: v.string(),
+    installedToolIds: v.array(v.string()),
+    sharedContextJson: v.string(),
+    updatedAt: v.number(),
+  }).index("by_deployment", ["deploymentId"]),
 
   agents: defineTable({
     slug: v.string(),
@@ -37,6 +49,7 @@ export default defineSchema({
 
   threads: defineTable({
     agentId: v.id("agents"),
+    instanceId: v.string(),
     title: v.string(),
     status: threadStatus,
     surface,
@@ -47,12 +60,15 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index("by_agent", ["agentId"])
+    .index("by_instance", ["instanceId"])
+    .index("by_instance_and_updated_at", ["instanceId", "updatedAt"])
     .index("by_surface", ["surface"])
     .index("by_surface_and_external_thread", ["surface", "externalThreadId"])
     .index("by_updated_at", ["updatedAt"]),
 
   messages: defineTable({
     threadId: v.id("threads"),
+    instanceId: v.string(),
     role: messageRole,
     surface,
     content: v.string(),
@@ -64,6 +80,7 @@ export default defineSchema({
 
   artifacts: defineTable({
     threadId: v.id("threads"),
+    instanceId: v.string(),
     kind: artifactKind,
     label: v.string(),
     surface,
@@ -85,4 +102,18 @@ export default defineSchema({
     .index("by_key", ["key"])
     .index("by_scope", ["scope"])
     .index("by_scope_and_key", ["scope", "key"]),
+
+  instanceConfigs: defineTable({
+    deploymentId: v.string(),
+    instanceId: v.string(),
+    label: v.string(),
+    gateMode: instanceGateMode,
+    passwordSecretName: v.optional(v.string()),
+    exposedToolIds: v.array(v.string()),
+    resolvedContextJson: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_instance", ["instanceId"])
+    .index("by_deployment_and_instance", ["deploymentId", "instanceId"]),
 });

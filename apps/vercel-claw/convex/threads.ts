@@ -24,15 +24,17 @@ import {
 export const list = query({
   args: {
     limit: v.optional(v.number()),
+    instanceId: v.optional(v.string()),
   },
   returns: v.array(threadSummaryValidator),
   handler: async (ctx, args) => {
     const limit = Math.max(1, Math.min(args.limit ?? 20, 50));
-    const threads = await ctx.db
-      .query("threads")
-      .withIndex("by_updated_at")
-      .order("desc")
-      .collect();
+    const threadQuery = args.instanceId
+      ? ctx.db
+          .query("threads")
+          .withIndex("by_instance_and_updated_at", (query) => query.eq("instanceId", args.instanceId!))
+      : ctx.db.query("threads").withIndex("by_updated_at");
+    const threads = await threadQuery.order("desc").collect();
 
     return threads
       .slice(0, limit)
@@ -114,6 +116,7 @@ export const getPromptContext = query({
 export const create = mutation({
   args: {
     title: v.optional(v.string()),
+    instanceId: v.string(),
     surface: surfaceValidator,
     agentSlug: v.optional(v.string()),
     externalThreadId: v.optional(v.string()),
@@ -123,6 +126,7 @@ export const create = mutation({
   handler: async (ctx, args) => {
     return await createThread(ctx, {
       title: args.title,
+      instanceId: args.instanceId,
       surface: args.surface,
       agentSlug: args.agentSlug,
       externalThreadId: args.externalThreadId,
@@ -133,6 +137,7 @@ export const create = mutation({
 
 export const createOrGetExternal = mutation({
   args: {
+    instanceId: v.string(),
     surface: surfaceValidator,
     externalThreadId: v.string(),
     externalUserId: v.optional(v.string()),
@@ -141,13 +146,19 @@ export const createOrGetExternal = mutation({
   },
   returns: threadSummaryValidator,
   handler: async (ctx, args) => {
-    const existing = await getThreadByExternalRef(ctx, args.surface, args.externalThreadId);
+    const existing = await getThreadByExternalRef(
+      ctx,
+      args.instanceId,
+      args.surface,
+      args.externalThreadId,
+    );
     if (existing) {
       return mapThread(existing as Parameters<typeof mapThread>[0]);
     }
 
     return await createThread(ctx, {
       title: args.title,
+      instanceId: args.instanceId,
       surface: args.surface,
       agentSlug: args.agentSlug,
       externalThreadId: args.externalThreadId,
@@ -180,6 +191,7 @@ export const appendMessage = mutation({
 
     const messageId = await ctx.db.insert("messages", {
       threadId: thread._id,
+      instanceId: thread.instanceId,
       role: args.role,
       surface: args.surface,
       content,
@@ -228,6 +240,7 @@ async function createThread(
   ctx: MutationCtx,
   args: {
     title?: string;
+    instanceId: string;
     surface: "web" | "telegram";
     agentSlug?: string;
     externalThreadId?: string;
@@ -236,31 +249,17 @@ async function createThread(
 ) {
   const agent = await ensureAgent(ctx, args.agentSlug ?? DEFAULT_AGENT_SLUG);
   const now = Date.now();
-  const threadInput: {
-    agentId: string;
-    title: string;
-    status: "idle";
-    surface: "web" | "telegram";
-    createdAt: number;
-    updatedAt: number;
-    externalThreadId?: string;
-    externalUserId?: string;
-  } = {
+  const threadInput = {
     agentId: agent._id,
+    instanceId: args.instanceId,
     title: deriveThreadTitle(args.title),
-    status: "idle",
+    status: "idle" as const,
     surface: args.surface,
     createdAt: now,
     updatedAt: now,
+    ...(args.externalThreadId ? { externalThreadId: args.externalThreadId } : {}),
+    ...(args.externalUserId ? { externalUserId: args.externalUserId } : {}),
   };
-
-  if (args.externalThreadId) {
-    threadInput.externalThreadId = args.externalThreadId;
-  }
-
-  if (args.externalUserId) {
-    threadInput.externalUserId = args.externalUserId;
-  }
 
   const threadId = await ctx.db.insert("threads", threadInput);
 

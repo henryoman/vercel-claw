@@ -1,0 +1,14 @@
+{
+  "id": "agent-browser",
+  "label": "Agent Browser",
+  "kind": "hybrid",
+  "serverName": "agent-browser",
+  "description": "Browser automation tool powered by the agent-browser CLI.",
+  "runtime": "app",
+  "install": {
+    "packages": ["agent-browser"],
+    "commands": [
+      ["bunx", "agent-browser", "install"]
+    ]
+  }
+}

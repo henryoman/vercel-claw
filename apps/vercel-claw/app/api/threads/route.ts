@@ -4,7 +4,8 @@ import { createThread, listThreads } from "@/lib/server/threads";
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const limit = Number(url.searchParams.get("limit") ?? "20");
-  const threads = await listThreads(limit);
+  const instanceId = url.searchParams.get("instanceId") ?? undefined;
+  const threads = await listThreads(limit, instanceId);
   return Response.json({ threads });
 }
 

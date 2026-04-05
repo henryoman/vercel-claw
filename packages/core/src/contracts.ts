@@ -14,10 +14,12 @@ export const artifactKinds = ["file", "note", "result"] as const;
 export type ArtifactKind = (typeof artifactKinds)[number];
 
 export const DEFAULT_AGENT_SLUG = "default";
+export const DEFAULT_INSTANCE_ID = "000";
 
 export interface ThreadSummary {
   id: string;
   agentId: string;
+  instanceId: string;
   title: string;
   status: ThreadStatus;
   surface: Surface;
@@ -31,6 +33,7 @@ export interface ThreadSummary {
 export interface ThreadMessage {
   id: string;
   threadId: string;
+  instanceId: string;
   role: MessageRole;
   surface: Surface;
   content: string;
@@ -55,6 +58,7 @@ export interface SettingRecord {
 export interface ArtifactRecord {
   id: string;
   threadId: string;
+  instanceId: string;
   kind: ArtifactKind;
   label: string;
   surface: Surface;
@@ -66,6 +70,7 @@ export interface ArtifactRecord {
 
 export interface CreateThreadRequest {
   title?: string;
+  instanceId: string;
   surface: Surface;
   agentSlug?: string;
   externalThreadId?: string;

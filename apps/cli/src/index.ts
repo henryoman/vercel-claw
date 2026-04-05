@@ -5,15 +5,20 @@ import { mkdir } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import {
   CLAW_CONFIG_FILE,
+  createDefaultInstalledToolsManifest,
+  createInstanceContextConfig,
+  createDefaultToolsConfig,
   cliCatalog,
   createDefaultToolsetManifest,
   createDeploymentManifest,
   createEnvTemplate,
   createInstanceManifest,
+  createSharedContextConfig,
   createSharedDeploymentDefaults,
   createSharedSystemPromptFile,
   defaultClawConfig,
   formatInstanceKey,
+  listToolManifests,
   mergeClawConfig,
   resolveCliDefinitions,
   resolveEnvRequirements,
@@ -23,33 +28,46 @@ import {
   type ClawConfig,
 } from "@vercel-claw/core";
 import { promptForSelections } from "./checklist";
+import { handleSyncCommand } from "./sync";
+import { handleToolCommand } from "./tools";
 
 const [command = "help", ...args] = Bun.argv.slice(2);
 const workspaceRoot = await findWorkspaceRoot(process.cwd());
 
-switch (command) {
-  case "help":
-    printHelp();
-    break;
-  case "init":
-  case "setup":
-    await initWorkspace(workspaceRoot, args);
-    break;
-  case "doctor":
-    await doctor(workspaceRoot);
-    break;
-  case "config":
-    await handleConfig(workspaceRoot, args);
-    break;
-  case "dev":
-    await dev(workspaceRoot);
-    break;
-  case "deploy":
-    await deploy(workspaceRoot, args);
-    break;
-  default:
-    console.error(`Unknown command: ${command}`);
-    printHelp(1);
+try {
+  switch (command) {
+    case "help":
+      printHelp();
+      break;
+    case "init":
+    case "setup":
+      await initWorkspace(workspaceRoot, args);
+      break;
+    case "doctor":
+      await doctor(workspaceRoot);
+      break;
+    case "config":
+      await handleConfig(workspaceRoot, args);
+      break;
+    case "tool":
+      await handleToolCommand(workspaceRoot, await loadConfig(workspaceRoot), args);
+      break;
+    case "sync":
+      await handleSyncCommand(workspaceRoot, await loadConfig(workspaceRoot));
+      break;
+    case "dev":
+      await dev(workspaceRoot);
+      break;
+    case "deploy":
+      await deploy(workspaceRoot, args);
+      break;
+    default:
+      console.error(`Unknown command: ${command}`);
+      printHelp(1);
+  }
+} catch (error) {
+  console.error(error instanceof Error ? error.message : "Unexpected CLI error");
+  process.exit(1);
 }
 
 function printHelp(exitCode = 0) {
@@ -62,8 +80,15 @@ Commands:
   doctor               Inspect CLI installs, env readiness, and toolkit requirements
   config show          Print the resolved config
   config set KEY VAL   Update a config field with dot-path syntax
+  tool list            List shipped tools
+  tool inspect ID      Show the deployment/install plan for a tool
+  tool install ID      Install a shipped tool for the deployment
+  tool uninstall ID    Remove a tool from the deployment
+  tool activate ID     Expose an installed tool to an instance
+  tool deactivate ID   Remove a tool from an instance
+  sync                 Push repo-owned tool/context state into Convex
   dev                  Run Convex dev and Next dev together
-  deploy [--prod]      Deploy Convex first, then the Vercel app
+  deploy [--prod]      Deploy Convex, sync runtime config, then the Vercel app
 `);
 
   process.exit(exitCode);
@@ -137,6 +162,19 @@ async function initWorkspace(root: string, args: string[]) {
         initialValues: recommendedCliIds,
       });
 
+  const selectedInstalledToolIds = useDefaults
+    ? await readInstalledToolIds(root, existingConfig)
+    : await promptForSelections({
+        title: "Select the shipped tools this deployment should install",
+        help: "Use space to toggle a tool. Press Enter when the checklist is complete.",
+        options: listToolManifests().map((tool) => ({
+          value: tool.id,
+          label: tool.label,
+          hint: tool.description,
+        })),
+        initialValues: await readInstalledToolIds(root, existingConfig),
+      });
+
   const config = mergeClawConfig({
     ...existingConfig,
     selectedToolkitIds,
@@ -156,7 +194,7 @@ async function initWorkspace(root: string, args: string[]) {
 
   await ensureEnvFile(envExamplePath, config);
   await ensureEnvFile(envPath, config);
-  await ensureEditableDeploymentArea(root, config);
+  await ensureEditableDeploymentArea(root, config, selectedInstalledToolIds);
 
   console.log("");
   console.log("Selected toolkits:");
@@ -167,6 +205,8 @@ async function initWorkspace(root: string, args: string[]) {
   );
   console.log("Selected CLIs:");
   console.log(selectedCliIds.length > 0 ? `  ${selectedCliIds.join(", ")}` : "  none");
+  console.log("Installed tools:");
+  console.log(selectedInstalledToolIds.length > 0 ? `  ${selectedInstalledToolIds.join(", ")}` : "  none");
   console.log("");
   console.log("Next steps:");
   console.log("  1. Run vercel-claw doctor");
@@ -176,7 +216,8 @@ async function initWorkspace(root: string, args: string[]) {
   console.log(
     `  5. Edit ${config.deploymentsDir}/${config.defaultDeploymentId}/instances/000 for per-instance overrides`,
   );
-  console.log("  6. Run vercel-claw dev to start Convex and the Next.js app");
+  console.log("  6. Run vercel-claw sync after Convex is available");
+  console.log("  7. Run vercel-claw dev to start Convex and the Next.js app");
 }
 
 async function ensureEnvFile(path: string, config: ClawConfig) {
@@ -199,7 +240,11 @@ async function ensureEnvFile(path: string, config: ClawConfig) {
   }
 }
 
-async function ensureEditableDeploymentArea(root: string, config: ClawConfig) {
+async function ensureEditableDeploymentArea(
+  root: string,
+  config: ClawConfig,
+  installedToolIds: string[],
+) {
   const deploymentsDir = resolve(root, config.deploymentsDir);
   const deploymentRoot = join(deploymentsDir, config.defaultDeploymentId);
   const sharedDir = join(deploymentRoot, "shared");
@@ -218,10 +263,17 @@ async function ensureEditableDeploymentArea(root: string, config: ClawConfig) {
     createDeploymentsReadme(config.defaultDeploymentId, firstInstanceId),
   );
   await ensureJsonFile(join(deploymentRoot, "deployment.json"), createDeploymentManifest(config));
+  await writeJsonFile(
+    join(deploymentRoot, "installed-tools.json"),
+    createDefaultInstalledToolsManifest(installedToolIds),
+  );
   await ensureJsonFile(join(sharedDir, "defaults.json"), createSharedDeploymentDefaults(config));
+  await ensureJsonFile(join(sharedDir, "context.json"), createSharedContextConfig());
   await ensureTextFile(join(promptsDir, "system.md"), createSharedSystemPromptFile());
   await ensureJsonFile(join(toolsetsDir, "default.json"), createDefaultToolsetManifest(config));
   await ensureJsonFile(join(firstInstanceDir, "instance.json"), createInstanceManifest(firstInstanceId));
+  await ensureJsonFile(join(firstInstanceDir, "tools.json"), createDefaultToolsConfig());
+  await ensureJsonFile(join(firstInstanceDir, "context.json"), createInstanceContextConfig());
 }
 
 async function ensureJsonFile(path: string, value: unknown) {
@@ -242,21 +294,46 @@ async function ensureTextFile(path: string, value: string) {
   console.log(`Created ${relativeToCwd(path)}`);
 }
 
+async function writeJsonFile(path: string, value: unknown) {
+  await Bun.write(path, `${JSON.stringify(value, null, 2)}\n`);
+  console.log(`Updated ${relativeToCwd(path)}`);
+}
+
 function createDeploymentsReadme(defaultDeploymentId: string, firstInstanceId: string) {
   return `# Editable Deployment Area
 
 This directory is the human-editable control plane for generated instances.
 
 - \`${defaultDeploymentId}/shared\` contains deployment-wide defaults shared by every instance.
+- \`${defaultDeploymentId}/installed-tools.json\` is the deployment-level source of truth for which tools/plugins are installed in the repo.
+- \`${defaultDeploymentId}/shared/context.json\` holds repo-owned shared context defaults.
 - \`${defaultDeploymentId}/instances/${firstInstanceId}\` contains per-instance overrides for the first instance.
-- Shared code still lives in \`apps/\`, \`packages/\`, \`tools/\`, and \`connectors/\`.
+- \`${defaultDeploymentId}/instances/${firstInstanceId}/tools.json\` is the central source of truth for which tools the model sees in that instance.
+- \`${defaultDeploymentId}/instances/${firstInstanceId}/context.json\` holds repo-owned per-instance context overrides.
+- Shared shipped tool source code lives in \`packages/tools/\`.
+- The CLI installs tools at the deployment level and instances only decide which installed tools to expose.
+- Run \`vercel-claw sync\` after repo edits to push resolved tool/context state into Convex.
 
-Gate mode is configured in each \`instance.json\`.
-
-- Use \`"member"\` as the safe default for authenticated access.
-- Use \`"password"\` only with a secret reference such as \`passwordSecretName\`; do not store hashes or plaintext passwords in repo files.
-- Use \`"public"\` only for intentionally open instances.
+Gate configuration is stored in each \`instance.json\` and synced into Convex by the CLI.
 `;
+}
+
+async function readInstalledToolIds(root: string, config: ClawConfig) {
+  const installedToolsPath = resolve(
+    root,
+    config.deploymentsDir,
+    config.defaultDeploymentId,
+    "installed-tools.json",
+  );
+
+  if (!existsSync(installedToolsPath)) {
+    return [] as string[];
+  }
+
+  const manifest = (await Bun.file(installedToolsPath).json()) as {
+    installedToolIds?: string[];
+  };
+  return manifest.installedToolIds ?? [];
 }
 
 async function doctor(root: string) {
@@ -374,6 +451,7 @@ async function deploy(root: string, args: string[]) {
   const prod = args.includes("--prod");
 
   await run(["bunx", "convex", "deploy"], appDir);
+  await handleSyncCommand(root, config);
 
   const vercelArgs = ["bunx", "vercel", "deploy"];
   if (prod) {

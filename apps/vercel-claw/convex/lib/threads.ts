@@ -1,63 +1,21 @@
 import { DEFAULT_AGENT_SLUG } from "@vercel-claw/core";
+import type { Doc } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
 import { NotFoundError, ValidationError } from "./errors";
 
 type DatabaseCtx = QueryCtx | MutationCtx;
 type DatabaseId = Parameters<QueryCtx["db"]["get"]>[0];
-type ThreadDoc = {
-  _id: string;
-  agentId: string;
-  title: string;
-  status: "idle" | "running" | "completed" | "errored";
-  surface: "web" | "telegram";
-  externalThreadId?: string;
-  externalUserId?: string;
-  lastMessageAt?: number;
-  createdAt: number;
-  updatedAt: number;
-};
-type MessageDoc = {
-  _id: string;
-  threadId: string;
-  role: "system" | "user" | "assistant" | "tool";
-  surface: "web" | "telegram";
-  content: string;
-  externalMessageId?: string;
-  createdAt: number;
-};
-type SettingDoc = {
-  _id: string;
-  scope: "global" | "web" | "telegram";
-  key: string;
-  label: string;
-  value: string;
-  updatedAt: number;
-};
-type ArtifactDoc = {
-  _id: string;
-  threadId: string;
-  kind: "file" | "note" | "result";
-  label: string;
-  surface: "web" | "telegram";
-  storageId?: string;
-  text?: string;
-  externalArtifactId?: string;
-  createdAt: number;
-};
-type AgentDoc = {
-  _id: string;
-  slug: string;
-  label: string;
-  model: string;
-  systemPrompt: string;
-  createdAt: number;
-  updatedAt: number;
-};
+type ThreadDoc = Doc<"threads">;
+type MessageDoc = Doc<"messages">;
+type SettingDoc = Doc<"settings">;
+type ArtifactDoc = Doc<"artifacts">;
+type AgentDoc = Doc<"agents">;
 
 export function mapThread(thread: ThreadDoc) {
   return {
     id: thread._id,
     agentId: thread.agentId,
+    instanceId: thread.instanceId,
     title: thread.title,
     status: thread.status,
     surface: thread.surface,
@@ -73,6 +31,7 @@ export function mapMessage(message: MessageDoc) {
   return {
     id: message._id,
     threadId: message.threadId,
+    instanceId: message.instanceId,
     role: message.role,
     surface: message.surface,
     content: message.content,
@@ -96,6 +55,7 @@ export function mapArtifact(artifact: ArtifactDoc) {
   return {
     id: artifact._id,
     threadId: artifact.threadId,
+    instanceId: artifact.instanceId,
     kind: artifact.kind,
     label: artifact.label,
     surface: artifact.surface,
@@ -169,14 +129,21 @@ export async function getAgentOrThrow(ctx: DatabaseCtx, agentId: DatabaseId) {
 
 export async function getThreadByExternalRef(
   ctx: DatabaseCtx,
+  instanceId: string,
   surface: ThreadDoc["surface"],
   externalThreadId: string,
 ) {
   return await ctx.db
     .query("threads")
-    .withIndex("by_surface", (query) => query.eq("surface", surface))
+    .withIndex("by_instance", (query) => query.eq("instanceId", instanceId))
     .collect()
-    .then((threads) => threads.find((thread) => thread.externalThreadId === externalThreadId));
+    .then(
+      (threads) =>
+        threads.find(
+          (thread) =>
+            thread.surface === surface && thread.externalThreadId === externalThreadId,
+        ),
+    );
 }
 
 export async function getMessageByExternalRef(
