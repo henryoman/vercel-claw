@@ -2,6 +2,7 @@ import type { ShippedToolInstallSpec } from "../manifest-types";
 
 export const agentBrowserInstallSpec: ShippedToolInstallSpec = {
   id: "agent-browser",
+  version: "0.1.0",
   label: "Agent Browser",
   description: "Browser automation tool powered by the agent-browser CLI.",
   kind: "hybrid",

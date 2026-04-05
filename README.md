@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./public/logo.png" alt="vercel-claw" width="720" />
+  <img src="./public/logo.webp" alt="vercel-claw" width="720" />
 </p>
 
 <h1 align="center">vercel-claw</h1>

@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "generatedAt": "2026-04-05T00:40:24.263Z",
+  "sourceRepo": "https://github.com/henryoman/vercel-claw",
+  "tools": [
+    {
+      "id": "notion",
+      "version": "0.1.0",
+      "label": "Notion",
+      "description": "Hosted Notion MCP connection metadata and docs for workspace access.",
+      "kind": "mcp",
+      "activationScope": "instance",
+      "requiredEnvVars": [],
+      "optionalEnvVars": [],
+      "dependencies": [],
+      "installCommands": [],
+      "verifyCommands": [],
+      "bundle": {
+        "url": "https://github.com/henryoman/vercel-claw/releases/download/tool-bundles/notion-0.1.0.zip",
+        "sha256": "e9079a376b63b87e0fef2df45cf9151fbe29f21be5624510c955ecbeade10394",
+        "format": "zip",
+        "sizeBytes": 3224
+      },
+      "metadata": {
+        "rootDirectory": "notion",
+        "mcpConfigPath": "notion/mcp.json",
+        "knowledgeDirectory": "notion/knowledge",
+        "skillsDirectory": "notion/skills",
+        "readmePath": "notion/README.md"
+      }
+    },
+    {
+      "id": "agent-browser",
+      "version": "0.1.0",
+      "label": "Agent Browser",
+      "description": "Browser automation tool powered by the agent-browser CLI.",
+      "kind": "hybrid",
+      "activationScope": "instance",
+      "requiredEnvVars": [],
+      "optionalEnvVars": [],
+      "dependencies": [
+        {
+          "target": "app",
+          "packages": [
+            "agent-browser"
+          ]
+        }
+      ],
+      "installCommands": [
+        {
+          "label": "Download browser engine",
+          "command": [
+            "bunx",
+            "agent-browser",
+            "install"
+          ],
+          "cwd": "app"
+        }
+      ],
+      "verifyCommands": [
+        {
+          "label": "Check agent-browser CLI",
+          "command": [
+            "bunx",
+            "agent-browser",
+            "--version"
+          ],
+          "cwd": "app"
+        }
+      ],
+      "bundle": {
+        "url": "https://github.com/henryoman/vercel-claw/releases/download/tool-bundles/agent-browser-0.1.0.zip",
+        "sha256": "b969bfff5df8bef614e42dd584cc097e76e944009e92c647d7a264680dcffba3",
+        "format": "zip",
+        "sizeBytes": 2520
+      },
+      "metadata": {
+        "rootDirectory": "agent-browser",
+        "mcpConfigPath": "agent-browser/mcp.json",
+        "knowledgeDirectory": "agent-browser/knowledge",
+        "skillsDirectory": "agent-browser/skills",
+        "readmePath": "agent-browser/README.md"
+      }
+    }
+  ]
+}

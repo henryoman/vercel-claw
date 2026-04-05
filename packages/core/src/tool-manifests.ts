@@ -1,56 +1,40 @@
-import type {
-  ShippedToolActivationScope,
-  ShippedToolCommandSpec,
-  ShippedToolInstallSpec,
-  ShippedToolKind,
-  ShippedToolPackageDependency,
-} from "../../tools/manifest-types";
+import { agentBrowserTool } from "../../tools/agent-browser/activate";
 import { agentBrowserInstallSpec } from "../../tools/agent-browser/install";
+import type { ShippedToolInstallSpec } from "../../tools/manifest-types";
+import { notionTool } from "../../tools/notion/activate";
 import { notionInstallSpec } from "../../tools/notion/install";
+import type { ToolSourceManifest } from "./tool-registry";
 
 export const TOOL_CACHE_DIR = ".vercel-claw-cache/tools";
 
-export const toolKinds = ["mcp", "cli", "package", "template", "hybrid"] as const;
-export type ToolKind = ShippedToolKind;
+type ToolRuntimeSource = Pick<
+  ToolSourceManifest,
+  | "runtime"
+  | "docsFile"
+  | "mcpServerName"
+  | "defaultReadTargets"
+  | "capabilities"
+  | "contextHints"
+  | "promptHints"
+  | "recommendedConnection"
+  | "fallbackConnection"
+>;
 
-export const toolInstallTargets = ["app", "cli"] as const;
-export type ToolInstallTarget = ShippedToolPackageDependency["target"];
-
-export const toolWorkingDirectories = ["workspace", "app", "cli"] as const;
-export type ToolWorkingDirectory = ShippedToolCommandSpec["cwd"];
-
-export const toolActivationScopes = ["shared", "instance", "both"] as const;
-export type ToolActivationScope = ShippedToolActivationScope;
-
-export interface ToolPackageDependency extends ShippedToolPackageDependency {}
-
-export interface ToolCommandSpec extends ShippedToolCommandSpec {}
-
-export interface ToolManifest {
-  id: string;
-  label: string;
-  description: string;
-  kind: ToolKind;
-  shippedToolDir: string;
-  activationScope: ToolActivationScope;
-  dependencies: ToolPackageDependency[];
-  installCommands: ToolCommandSpec[];
-  verifyCommands: ToolCommandSpec[];
-  requiredEnvVars: string[];
-  optionalEnvVars: string[];
-  cacheSubdir: string;
-}
-
-function withShippedDir(tool: ShippedToolInstallSpec): ToolManifest {
+function createToolManifest(
+  install: ShippedToolInstallSpec,
+  runtime: ToolRuntimeSource,
+): ToolSourceManifest {
   return {
-    ...tool,
-    shippedToolDir: `packages/tools/${tool.id}`,
+    ...install,
+    ...runtime,
+    shippedToolDir: `packages/tools/${install.id}`,
   };
 }
 
-export const toolCatalog: ToolManifest[] = [notionInstallSpec, agentBrowserInstallSpec].map(
-  withShippedDir,
-);
+export const toolCatalog: ToolSourceManifest[] = [
+  createToolManifest(notionInstallSpec, notionTool),
+  createToolManifest(agentBrowserInstallSpec, agentBrowserTool),
+];
 
 export function listToolManifests() {
   return toolCatalog;

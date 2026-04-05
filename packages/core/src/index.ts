@@ -1,3 +1,5 @@
+import { DEFAULT_TOOL_REGISTRY_URL } from "./tool-registry";
+
 export interface ClawConfig {
   name: string;
   appDir: string;
@@ -5,6 +7,7 @@ export interface ClawConfig {
   deploymentsDir: string;
   defaultDeploymentId: string;
   defaultModel: string;
+  toolRegistryUrl: string;
   requiredEnvVars: string[];
   optionalEnvVars: string[];
   selectedCliIds: string[];
@@ -109,6 +112,7 @@ export const defaultClawConfig: ClawConfig = {
   deploymentsDir: DEFAULT_DEPLOYMENTS_DIR,
   defaultDeploymentId: DEFAULT_DEPLOYMENT_ID,
   defaultModel: "gpt-5",
+  toolRegistryUrl: DEFAULT_TOOL_REGISTRY_URL,
   requiredEnvVars: [
     "OPENAI_API_KEY",
     "NEXT_PUBLIC_CONVEX_URL",
@@ -315,7 +319,7 @@ export function createSharedDeploymentDefaults(
 ): SharedDeploymentDefaults {
   return {
     defaultModel: config.defaultModel,
-    promptFiles: ["prompts/system.md"],
+    promptFiles: ["prompts/system.md", "prompts/modes/default.md"],
     toolsetFile: "toolsets/default.json",
     integrations: config.selectedToolkitIds,
   };
@@ -412,9 +416,25 @@ export function createInstanceManifest(
 
 export function createSharedSystemPromptFile() {
   return [
-    "# Shared system prompt",
+    "# vercel-claw",
     "",
-    "You are vercel-claw, a concise personal AI operator.",
+    "You are `vercel-claw`, a concise personal AI operator deployed by a user to help them accomplish tasks through chat and the tools configured for their instance.",
+    "",
+    "Treat the current deployment configuration, instance instructions, knowledge files, and enabled tools as the source of truth for what you can access and how you should behave.",
+  ].join("\n");
+}
+
+export function createDefaultModePromptFile() {
+  return [
+    "# default mode",
+    "",
+    "Stay focused on the user's explicit request and do not expand scope on your own.",
+    "",
+    "Be direct, practical, and honest about uncertainty, limitations, and what you actually verified.",
+    "",
+    "Ask a short clarifying question when needed to unblock the next useful step, but otherwise prefer taking the most efficient concrete action you can support.",
+    "",
+    "When you act on the user's behalf, communicate what you are doing and what happened in a concise way.",
   ].join("\n");
 }
 
@@ -478,4 +498,6 @@ function uniqueStrings(values: string[]) {
 }
 
 export * from "./contracts";
+export * from "./prompt-composition";
 export * from "./tool-manifests";
+export * from "./tool-registry";

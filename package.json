@@ -10,10 +10,12 @@
     "dev": "bun run --cwd apps/cli dev -- dev",
     "dev:app": "bun run --cwd apps/vercel-claw dev",
     "cli": "bun run --cwd apps/cli dev --",
+    "build:tools": "bun run --cwd apps/cli build:tools",
     "build": "bun run --cwd packages/core build && bun run --cwd apps/cli build && bun run --cwd apps/vercel-claw build",
-    "check": "bun run --cwd packages/core check && bun run --cwd apps/cli check && bun run --cwd apps/vercel-claw check"
+    "check": "bun run --cwd packages/core check && bun run --cwd apps/cli check && bun run --cwd apps/vercel-claw check",
+    "update-all": "bun update --latest && bun update --latest --recursive"
   },
   "devDependencies": {
-    "typescript": "^5.8.3"
+    "typescript": "^6.0.2"
   }
 }

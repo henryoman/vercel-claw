@@ -1,18 +1,21 @@
 import { existsSync } from "node:fs";
 import { readdir } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { ConvexHttpClient } from "convex/browser";
 import {
+  composeResolvedSystemPrompt,
   createDefaultInstalledToolsManifest,
   createDefaultToolsConfig,
   createInstanceContextConfig,
   createInstanceManifest,
   createSharedContextConfig,
+  createSharedDeploymentDefaults,
   resolveContextConfig,
   type ClawConfig,
   type ContextConfig,
   type InstalledToolsManifest,
   type InstanceManifest,
+  type SharedDeploymentDefaults,
   type SharedContextConfig,
   type ToolsConfig,
 } from "@vercel-claw/core";
@@ -31,22 +34,34 @@ export async function handleSyncCommand(root: string, config: ClawConfig) {
   const client = new ConvexHttpClient(convexUrl);
   const deploymentRoot = resolve(root, config.deploymentsDir, config.defaultDeploymentId);
   const installedToolsPath = join(deploymentRoot, "installed-tools.json");
+  const sharedDefaultsPath = join(deploymentRoot, "shared", "defaults.json");
   const sharedContextPath = join(deploymentRoot, "shared", "context.json");
   const instancesRoot = join(deploymentRoot, "instances");
 
-  const installedTools = await readJsonFile<InstalledToolsManifest>(
-    installedToolsPath,
-    createDefaultInstalledToolsManifest(),
-  );
-  const sharedContext = await readJsonFile<SharedContextConfig>(
-    sharedContextPath,
-    createSharedContextConfig(),
-  );
+  const [installedTools, sharedDefaults, sharedContext] = await Promise.all([
+    readJsonFile<InstalledToolsManifest>(installedToolsPath, createDefaultInstalledToolsManifest()),
+    readJsonFile<SharedDeploymentDefaults>(
+      sharedDefaultsPath,
+      createSharedDeploymentDefaults(config),
+    ),
+    readJsonFile<SharedContextConfig>(sharedContextPath, createSharedContextConfig()),
+  ]);
+  const defaultSharedPrompt = createSharedContextConfig().systemPrompt;
+  const sharedPromptFileContents = await readPromptFiles(deploymentRoot, sharedDefaults.promptFiles);
+  const resolvedSharedContext: SharedContextConfig = {
+    ...sharedContext,
+    systemPrompt: composeResolvedSystemPrompt({
+      sharedBasePrompt: sharedContext.systemPrompt,
+      sharedPromptFileContents,
+      inheritsShared: true,
+      defaultSharedPrompt,
+    }),
+  };
 
   await client.mutation(api.runtimeConfig.syncDeployment, {
     deploymentId: config.defaultDeploymentId,
     installedToolIds: installedTools.installedToolIds,
-    sharedContextJson: JSON.stringify(sharedContext),
+    sharedContextJson: JSON.stringify(resolvedSharedContext),
   });
 
   const instanceDirs = existsSync(instancesRoot)
@@ -70,11 +85,23 @@ export async function handleSyncCommand(root: string, config: ClawConfig) {
       join(instanceRoot, "context.json"),
       createInstanceContextConfig(),
     );
+    const instancePromptFileContents = await readPromptFiles(
+      deploymentRoot,
+      instanceManifest.promptFiles,
+    );
 
     const exposedToolIds = toolsConfig.exposedToolIds.filter((toolId) =>
       installedTools.installedToolIds.includes(toolId),
     );
-    const resolvedContext = resolveContextConfig(sharedContext, instanceContext);
+    const resolvedContext = resolveContextConfig(resolvedSharedContext, instanceContext);
+    resolvedContext.systemPrompt = composeResolvedSystemPrompt({
+      sharedBasePrompt: resolvedSharedContext.systemPrompt,
+      sharedPromptFileContents: [],
+      instanceBasePrompt: instanceContext.systemPrompt,
+      instancePromptFileContents,
+      inheritsShared: instanceContext.inheritsShared,
+      defaultSharedPrompt,
+    });
 
     await client.mutation(api.runtimeConfig.syncInstance, {
       deploymentId: config.defaultDeploymentId,
@@ -128,4 +155,45 @@ async function readJsonFile<T>(path: string, fallback: T): Promise<T> {
   }
 
   return (await Bun.file(path).json()) as T;
+}
+
+async function readPromptFiles(deploymentRoot: string, promptFiles: string[]) {
+  const contents: string[] = [];
+
+  for (const promptFile of promptFiles) {
+    const absolutePath = resolvePromptFilePath(deploymentRoot, promptFile);
+    if (!existsSync(absolutePath)) {
+      throw new Error(`Prompt file not found: ${toRepoStylePath(relative(deploymentRoot, absolutePath))}`);
+    }
+
+    const content = (await Bun.file(absolutePath).text()).trim();
+    if (content.length > 0) {
+      contents.push(content);
+    }
+  }
+
+  return contents;
+}
+
+function resolvePromptFilePath(deploymentRoot: string, promptFile: string) {
+  const trimmedPromptFile = promptFile.trim();
+  if (trimmedPromptFile.length === 0) {
+    throw new Error("Prompt file paths must not be empty.");
+  }
+
+  if (isAbsolute(trimmedPromptFile)) {
+    throw new Error(`Prompt files must be deployment-relative, received absolute path: ${trimmedPromptFile}`);
+  }
+
+  const absolutePath = resolve(deploymentRoot, trimmedPromptFile);
+  const relativePath = toRepoStylePath(relative(deploymentRoot, absolutePath));
+  if (relativePath === ".." || relativePath.startsWith("../")) {
+    throw new Error(`Prompt file escapes the deployment root: ${trimmedPromptFile}`);
+  }
+
+  return absolutePath;
+}
+
+function toRepoStylePath(value: string) {
+  return value.split(sep).join("/");
 }

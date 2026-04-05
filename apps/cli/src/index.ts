@@ -5,6 +5,7 @@ import { mkdir } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import {
   CLAW_CONFIG_FILE,
+  createDefaultModePromptFile,
   createDefaultInstalledToolsManifest,
   createInstanceContextConfig,
   createDefaultToolsConfig,
@@ -33,6 +34,8 @@ import { handleToolCommand } from "./tools";
 
 const [command = "help", ...args] = Bun.argv.slice(2);
 const workspaceRoot = await findWorkspaceRoot(process.cwd());
+const hasWorkspace = isWorkspaceRoot(workspaceRoot);
+const config = await loadConfig(workspaceRoot);
 
 try {
   switch (command) {
@@ -41,25 +44,32 @@ try {
       break;
     case "init":
     case "setup":
-      await initWorkspace(workspaceRoot, args);
+      await initWorkspace(requireWorkspaceRoot(workspaceRoot, hasWorkspace), args);
       break;
     case "doctor":
-      await doctor(workspaceRoot);
+      await doctor(requireWorkspaceRoot(workspaceRoot, hasWorkspace));
       break;
     case "config":
-      await handleConfig(workspaceRoot, args);
+      await handleConfig(requireWorkspaceRoot(workspaceRoot, hasWorkspace), args);
       break;
     case "tool":
-      await handleToolCommand(workspaceRoot, await loadConfig(workspaceRoot), args);
+    case "tools":
+      await handleToolCommand(
+        {
+          workspaceRoot: hasWorkspace ? workspaceRoot : null,
+          config,
+        },
+        args,
+      );
       break;
     case "sync":
-      await handleSyncCommand(workspaceRoot, await loadConfig(workspaceRoot));
+      await handleSyncCommand(requireWorkspaceRoot(workspaceRoot, hasWorkspace), config);
       break;
     case "dev":
-      await dev(workspaceRoot);
+      await dev(requireWorkspaceRoot(workspaceRoot, hasWorkspace));
       break;
     case "deploy":
-      await deploy(workspaceRoot, args);
+      await deploy(requireWorkspaceRoot(workspaceRoot, hasWorkspace), args);
       break;
     default:
       console.error(`Unknown command: ${command}`);
@@ -75,15 +85,21 @@ function printHelp(exitCode = 0) {
 
 Commands:
   help                 Show this help
-  init                 Interactive bootstrap with CLI/toolkit checklists
+  tools list           List remote tools from the registry
+  tools info ID        Show registry metadata for a tool
+  tools install ID     Download and install a tool bundle
+  tools update [ID]    Update one tool or all installed tools
+  tools remove ID      Remove an installed tool bundle
+  tools path ID        Print the installed path for a tool
+  tools doctor         Inspect CLI tool state and registry cache
+  tool ...             Alias for tools, plus workspace activate/deactivate commands
+
+Workspace-only Commands:
+  init                 Interactive workspace bootstrap with CLI/toolkit checklists
   setup                Alias for init
   doctor               Inspect CLI installs, env readiness, and toolkit requirements
   config show          Print the resolved config
   config set KEY VAL   Update a config field with dot-path syntax
-  tool list            List shipped tools
-  tool inspect ID      Show the deployment/install plan for a tool
-  tool install ID      Install a shipped tool for the deployment
-  tool uninstall ID    Remove a tool from the deployment
   tool activate ID     Expose an installed tool to an instance
   tool deactivate ID   Remove a tool from an instance
   sync                 Push repo-owned tool/context state into Convex
@@ -109,6 +125,18 @@ async function findWorkspaceRoot(startDir: string) {
 
     current = parent;
   }
+}
+
+function isWorkspaceRoot(root: string) {
+  return existsSync(join(root, CLAW_CONFIG_FILE));
+}
+
+function requireWorkspaceRoot(root: string, hasWorkspaceRoot: boolean) {
+  if (!hasWorkspaceRoot) {
+    throw new Error("This command only works inside a vercel-claw workspace.");
+  }
+
+  return root;
 }
 
 async function loadConfig(root: string): Promise<ClawConfig> {
@@ -248,13 +276,15 @@ async function ensureEditableDeploymentArea(
   const deploymentsDir = resolve(root, config.deploymentsDir);
   const deploymentRoot = join(deploymentsDir, config.defaultDeploymentId);
   const sharedDir = join(deploymentRoot, "shared");
-  const promptsDir = join(sharedDir, "prompts");
+  const promptsDir = join(deploymentRoot, "prompts");
+  const modesDir = join(promptsDir, "modes");
   const toolsetsDir = join(sharedDir, "toolsets");
   const instancesDir = join(deploymentRoot, "instances");
   const firstInstanceId = formatInstanceKey(0);
   const firstInstanceDir = join(instancesDir, firstInstanceId);
 
   await mkdir(promptsDir, { recursive: true });
+  await mkdir(modesDir, { recursive: true });
   await mkdir(toolsetsDir, { recursive: true });
   await mkdir(firstInstanceDir, { recursive: true });
 
@@ -270,6 +300,7 @@ async function ensureEditableDeploymentArea(
   await ensureJsonFile(join(sharedDir, "defaults.json"), createSharedDeploymentDefaults(config));
   await ensureJsonFile(join(sharedDir, "context.json"), createSharedContextConfig());
   await ensureTextFile(join(promptsDir, "system.md"), createSharedSystemPromptFile());
+  await ensureTextFile(join(modesDir, "default.md"), createDefaultModePromptFile());
   await ensureJsonFile(join(toolsetsDir, "default.json"), createDefaultToolsetManifest(config));
   await ensureJsonFile(join(firstInstanceDir, "instance.json"), createInstanceManifest(firstInstanceId));
   await ensureJsonFile(join(firstInstanceDir, "tools.json"), createDefaultToolsConfig());

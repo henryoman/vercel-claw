@@ -2,17 +2,20 @@ import { openai } from "@ai-sdk/openai";
 import {
   convertToModelMessages,
   generateText,
+  isStepCount,
   streamText,
   type UIMessage,
 } from "ai";
 import type { ChatSendRequest, Surface, ThreadMessage } from "@vercel-claw/core";
 import { getInstanceRuntimeConfig } from "./runtime-config";
 import { ensureGlobalSettings, listGlobalSettings } from "./settings";
+import { buildSystemPrompt } from "./system-prompt";
 import {
   appendMessage,
   getPromptContext,
   updateThreadStatus,
 } from "./threads";
+import { createAgentTools } from "./agent-tools";
 
 export async function streamChatResponse(payload: ChatSendRequest): Promise<Response> {
   const lastUserMessage = [...payload.messages]
@@ -46,6 +49,8 @@ export async function streamChatResponse(payload: ChatSendRequest): Promise<Resp
       model: openai(context.modelName),
       system: context.systemPrompt,
       messages: context.modelMessages,
+      tools: context.tools,
+      stopWhen: isStepCount(8),
     });
 
     return result.toUIMessageStreamResponse({
@@ -98,6 +103,8 @@ export async function generateThreadReply(threadId: string, surface: Surface) {
       model: openai(context.modelName),
       system: context.systemPrompt,
       messages: context.modelMessages,
+      tools: context.tools,
+      stopWhen: isStepCount(8),
     });
 
     const assistantMessage = await appendMessage({
@@ -144,6 +151,10 @@ async function buildModelContext(threadId: string) {
     systemPrompt: buildSystemPrompt(systemPrompt, runtimeConfig),
     uiMessages,
     modelMessages,
+    tools: createAgentTools({
+      exposedToolIds: runtimeConfig?.exposedToolIds ?? [],
+      knowledgeFiles: runtimeConfig?.context.knowledgeFiles ?? [],
+    }),
   };
 }
 
@@ -169,51 +180,4 @@ function extractLastAssistantText(messages: UIMessage[]) {
     .map((part) => part.text)
     .join("\n\n")
     .trim();
-}
-
-function buildSystemPrompt(
-  baseSystemPrompt: string,
-  runtimeConfig: Awaited<ReturnType<typeof getInstanceRuntimeConfig>>,
-) {
-  if (!runtimeConfig) {
-    return baseSystemPrompt;
-  }
-
-  const extraSections: string[] = [];
-
-  if (runtimeConfig.context.instructions.length > 0) {
-    extraSections.push(
-      `Instance instructions:\n${runtimeConfig.context.instructions
-        .map((line: string) => `- ${line}`)
-        .join("\n")}`,
-    );
-  }
-
-  if (runtimeConfig.context.notes.length > 0) {
-    extraSections.push(
-      `Instance notes:\n${runtimeConfig.context.notes
-        .map((line: string) => `- ${line}`)
-        .join("\n")}`,
-    );
-  }
-
-  if (runtimeConfig.context.knowledgeFiles.length > 0) {
-    extraSections.push(
-      `Knowledge files configured for this instance:\n${runtimeConfig.context.knowledgeFiles
-        .map((line: string) => `- ${line}`)
-        .join("\n")}`,
-    );
-  }
-
-  if (runtimeConfig.exposedToolIds.length > 0) {
-    extraSections.push(
-      `Only treat the following installed tools as enabled for this instance: ${runtimeConfig.exposedToolIds.join(", ")}.`,
-    );
-  }
-
-  if (extraSections.length === 0) {
-    return baseSystemPrompt;
-  }
-
-  return `${baseSystemPrompt}\n\n${extraSections.join("\n\n")}`;
 }

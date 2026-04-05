@@ -5,206 +5,346 @@ import type {
   ClawConfig,
   InstalledToolsManifest,
   InstanceManifest,
+  ToolCommandSpec,
+  ToolRegistryEntry,
+  ToolRegistryManifest,
   ToolsConfig,
 } from "@vercel-claw/core";
 import {
-  TOOL_CACHE_DIR,
   createDefaultInstalledToolsManifest,
   createDefaultToolsConfig,
   createInstanceManifest,
-  getToolManifest,
-  listToolManifests,
-  type ToolCommandSpec,
-  type ToolManifest,
 } from "@vercel-claw/core";
+import { coerce, gt } from "semver";
+import { installToolArchive, removeInstalledToolDirectory } from "./tool-archive";
+import { getToolRegistryEntry, loadToolRegistry, resolveToolRegistryUrl } from "./tool-registry";
+import {
+  ensureCliHome,
+  getCliHome,
+  getInstalledToolStatePath,
+  getRegistryCachePath,
+  getToolVersionDir,
+  readInstalledToolState,
+  writeInstalledToolState,
+} from "./tool-state";
 
-export async function handleToolCommand(root: string, config: ClawConfig, args: string[]) {
-  const [action = "list", toolId, ...rest] = args;
+export interface ToolCommandContext {
+  workspaceRoot: string | null;
+  config: ClawConfig;
+}
+
+export async function handleToolCommand(context: ToolCommandContext, args: string[]) {
+  const [rawAction = "list", toolId, ...rest] = args;
+  const action = normalizeAction(rawAction);
 
   switch (action) {
     case "list":
-      await listTools(root, config);
+      await listTools(context);
       return;
-    case "inspect":
+    case "info":
       if (!toolId) {
-        throw new Error("Usage: vercel-claw tool inspect <toolId>");
+        throw new Error("Usage: vercel-claw tools info <toolId>");
       }
-      await inspectTool(toolId);
+      await printToolInfo(context, toolId);
       return;
     case "install":
       if (!toolId) {
-        throw new Error("Usage: vercel-claw tool install <toolId> [--dry-run] [--force]");
+        throw new Error("Usage: vercel-claw tools install <toolId> [--force]");
       }
-      await installTool(root, config, toolId, rest);
+      await installTool(context, toolId, rest);
       return;
-    case "uninstall":
+    case "update":
+      await updateTools(context, toolId, rest);
+      return;
+    case "remove":
       if (!toolId) {
-        throw new Error("Usage: vercel-claw tool uninstall <toolId> [--dry-run] [--force]");
+        throw new Error("Usage: vercel-claw tools remove <toolId> [--force]");
       }
-      await uninstallTool(root, config, toolId, rest);
+      await removeTool(context, toolId, rest);
+      return;
+    case "path":
+      if (!toolId) {
+        throw new Error("Usage: vercel-claw tools path <toolId>");
+      }
+      await printToolPath(context, toolId);
+      return;
+    case "doctor":
+      await printToolsDoctor(context);
       return;
     case "activate":
       if (!toolId) {
-        throw new Error("Usage: vercel-claw tool activate <toolId> --instance <id> [--dry-run]");
+        throw new Error("Usage: vercel-claw tool activate <toolId> --instance <id>");
       }
-      await activateTool(root, config, toolId, rest);
+      await activateTool(context, toolId, rest);
       return;
     case "deactivate":
       if (!toolId) {
-        throw new Error("Usage: vercel-claw tool deactivate <toolId> --instance <id> [--dry-run]");
+        throw new Error("Usage: vercel-claw tool deactivate <toolId> --instance <id>");
       }
-      await deactivateTool(root, config, toolId, rest);
+      await deactivateTool(context, toolId, rest);
       return;
     default:
-      throw new Error(`Unknown tool command: ${action}`);
+      throw new Error(`Unknown tool command: ${rawAction}`);
   }
 }
 
-async function listTools(root: string, config: ClawConfig) {
-  const installedToolIds = await getInstalledToolIds(root, config);
+async function listTools(context: ToolCommandContext) {
+  const [registry, state, workspaceInstalledToolIds] = await Promise.all([
+    loadToolRegistry(context.config),
+    readInstalledToolState(),
+    context.workspaceRoot ? getWorkspaceInstalledToolIds(context.workspaceRoot, context.config) : Promise.resolve(null),
+  ]);
 
-  for (const tool of listToolManifests()) {
-    const enabled = installedToolIds.has(tool.id) ? "installed" : "not installed";
-    console.log(`${tool.id}`);
+  for (const tool of [...registry.tools].sort((left, right) => left.id.localeCompare(right.id))) {
+    const installed = state.installedTools[tool.id];
+    const status = describeInstalledStatus(installed?.version, tool.version);
+    console.log(tool.id);
     console.log(`  label: ${tool.label}`);
     console.log(`  kind: ${tool.kind}`);
-    console.log(`  status: ${enabled}`);
+    console.log(`  version: ${tool.version}`);
+    console.log(`  status: ${status}`);
+    if (workspaceInstalledToolIds) {
+      console.log(
+        `  workspace: ${workspaceInstalledToolIds.has(tool.id) ? "enabled in deployment" : "not enabled in deployment"}`,
+      );
+    }
     console.log(`  description: ${tool.description}`);
   }
 }
 
-async function inspectTool(toolId: string) {
-  const tool = getRequiredTool(toolId);
+async function printToolInfo(context: ToolCommandContext, toolId: string) {
+  const [registry, state] = await Promise.all([loadToolRegistry(context.config), readInstalledToolState()]);
+  const tool = getRequiredRegistryTool(registry, toolId);
+  const installed = state.installedTools[tool.id];
 
-  console.log(`${tool.id}`);
+  console.log(tool.id);
   console.log(`  label: ${tool.label}`);
   console.log(`  kind: ${tool.kind}`);
+  console.log(`  version: ${tool.version}`);
   console.log(`  activationScope: ${tool.activationScope}`);
-  console.log(`  shippedToolDir: ${tool.shippedToolDir}`);
-  console.log(`  cacheDir: ${join(TOOL_CACHE_DIR, tool.cacheSubdir)}`);
-
-  console.log("  dependencies:");
-  if (tool.dependencies.length === 0) {
-    console.log("    none");
-  } else {
-    for (const dependency of tool.dependencies) {
-      console.log(`    ${dependency.target}: ${dependency.packages.join(", ")}`);
-    }
-  }
-
+  console.log(`  installedVersion: ${installed?.version ?? "not installed"}`);
+  console.log(`  installedPath: ${installed?.installDir ?? "n/a"}`);
+  console.log(`  bundleUrl: ${tool.bundle.url}`);
+  console.log(`  checksum: ${tool.bundle.sha256}`);
+  console.log(`  bundleFormat: ${tool.bundle.format}`);
+  console.log(`  knowledgeDirectory: ${tool.metadata.knowledgeDirectory ?? "none"}`);
+  console.log(`  skillsDirectory: ${tool.metadata.skillsDirectory ?? "none"}`);
   printCommandGroup("  installCommands:", tool.installCommands);
   printCommandGroup("  verifyCommands:", tool.verifyCommands);
 }
 
-async function installTool(root: string, config: ClawConfig, toolId: string, args: string[]) {
-  const tool = getRequiredTool(toolId);
-  const options = parseActivateOptions(args);
-
-  const appDir = resolve(root, config.appDir);
-  const cliDir = resolve(root, "apps/cli");
-  const cacheDir = resolve(root, TOOL_CACHE_DIR, tool.cacheSubdir);
+async function installTool(context: ToolCommandContext, toolId: string, args: string[]) {
+  const options = parseToolOptions(args);
+  const registry = await loadToolRegistry(context.config);
+  const tool = getRequiredRegistryTool(registry, toolId);
+  const state = await readInstalledToolState();
+  const existing = state.installedTools[tool.id];
+  const installDir = getToolVersionDir(tool.id, tool.version);
   const summary: string[] = [];
 
-  await ensureDir(cacheDir, options.dryRun, summary);
-  await ensurePackageDependencies(appDir, cliDir, tool, options.dryRun, summary);
-  await runToolCommands(root, appDir, cliDir, tool.installCommands, options.dryRun, summary);
-  await updateInstalledToolsState(root, config, tool.id, true, options.dryRun, summary);
-  await writeToolMetadata(cacheDir, tool, "install", options, summary);
+  await ensureCliHome();
 
-  console.log(`Installed tool: ${tool.id}${options.dryRun ? " (dry run)" : ""}`);
+  if (existing?.version === tool.version && existsSync(existing.installDir) && !options.force) {
+    summary.push(`tool ${tool.id} is already installed at ${existing.installDir}`);
+  } else {
+    if (existing && existing.installDir !== installDir) {
+      await removeInstalledToolDirectory(existing.installDir);
+      summary.push(`removed previous version ${existing.version}`);
+    }
+
+    await installToolArchive(tool, installDir);
+    state.installedTools[tool.id] = {
+      id: tool.id,
+      version: tool.version,
+      installedAt: new Date().toISOString(),
+      installDir,
+      bundleUrl: tool.bundle.url,
+    };
+    await writeInstalledToolState(state);
+    summary.push(`installed ${tool.id}@${tool.version} into ${installDir}`);
+  }
+
+  if (context.workspaceRoot) {
+    await updateWorkspaceInstalledToolsState(context.workspaceRoot, context.config, tool.id, true, summary);
+  }
+
+  console.log(`Installed tool: ${tool.id}`);
   for (const line of summary) {
     console.log(`- ${line}`);
   }
 }
 
-async function uninstallTool(root: string, config: ClawConfig, toolId: string, args: string[]) {
-  const tool = getRequiredTool(toolId);
-  const options = parseActivateOptions(args);
-  const summary: string[] = [];
-  const instanceUsages = await getToolInstanceUsages(root, config, tool.id);
+async function updateTools(context: ToolCommandContext, toolId: string | undefined, args: string[]) {
+  const options = parseToolOptions(args);
+  const registry = await loadToolRegistry(context.config);
+  const state = await readInstalledToolState();
+  const requestedIds = toolId ? [toolId] : Object.keys(state.installedTools);
 
-  if (instanceUsages.length > 0 && !options.force) {
-    throw new Error(
-      `Tool ${tool.id} is still exposed in instances: ${instanceUsages.join(", ")}. Deactivate it first or rerun with --force.`,
-    );
+  if (requestedIds.length === 0) {
+    console.log("No installed tools to update.");
+    return;
   }
 
-  if (instanceUsages.length > 0 && options.force) {
-    for (const instanceId of instanceUsages) {
-      await updateInstanceToolsState(root, config, instanceId, tool.id, false, options.dryRun, summary);
+  const updated: string[] = [];
+  const skipped: string[] = [];
+
+  for (const id of requestedIds) {
+    const installed = state.installedTools[id];
+    const tool = getToolRegistryEntry(registry, id);
+
+    if (!tool) {
+      skipped.push(`${id} is not present in the registry`);
+      continue;
+    }
+
+    if (installed && !options.force && !isVersionNewer(installed.version, tool.version)) {
+      skipped.push(`${id} is already at ${installed.version}`);
+      continue;
+    }
+
+    await installTool(context, id, options.force ? ["--force"] : []);
+    updated.push(`${id} -> ${tool.version}`);
+  }
+
+  if (updated.length > 0) {
+    console.log("Updated tools:");
+    for (const line of updated) {
+      console.log(`- ${line}`);
     }
   }
 
-  await updateInstalledToolsState(root, config, tool.id, false, options.dryRun, summary);
-  await writeToolMetadata(
-    resolve(root, TOOL_CACHE_DIR, tool.cacheSubdir),
-    tool,
-    "uninstall",
-    options,
-    summary,
-  );
+  if (skipped.length > 0) {
+    console.log("Skipped:");
+    for (const line of skipped) {
+      console.log(`- ${line}`);
+    }
+  }
+}
 
-  console.log(`Uninstalled tool: ${tool.id}${options.dryRun ? " (dry run)" : ""}`);
+async function removeTool(context: ToolCommandContext, toolId: string, args: string[]) {
+  const options = parseToolOptions(args);
+  const state = await readInstalledToolState();
+  const installed = state.installedTools[toolId];
+  const summary: string[] = [];
+
+  if (!installed) {
+    throw new Error(`Tool ${toolId} is not installed.`);
+  }
+
+  if (context.workspaceRoot) {
+    const instanceUsages = await getToolInstanceUsages(context.workspaceRoot, context.config, toolId);
+    if (instanceUsages.length > 0 && !options.force) {
+      throw new Error(
+        `Tool ${toolId} is still exposed in instances: ${instanceUsages.join(", ")}. Deactivate it first or rerun with --force.`,
+      );
+    }
+
+    if (instanceUsages.length > 0) {
+      for (const instanceId of instanceUsages) {
+        await updateInstanceToolsState(
+          context.workspaceRoot,
+          context.config,
+          instanceId,
+          toolId,
+          false,
+          summary,
+        );
+      }
+    }
+  }
+
+  await removeInstalledToolDirectory(installed.installDir);
+  delete state.installedTools[toolId];
+  await writeInstalledToolState(state);
+  summary.push(`removed local bundle at ${installed.installDir}`);
+
+  if (context.workspaceRoot) {
+    await updateWorkspaceInstalledToolsState(context.workspaceRoot, context.config, toolId, false, summary);
+  }
+
+  console.log(`Removed tool: ${toolId}`);
   for (const line of summary) {
     console.log(`- ${line}`);
   }
 }
 
-async function activateTool(root: string, config: ClawConfig, toolId: string, args: string[]) {
-  const tool = getRequiredTool(toolId);
-  const options = parseActivateOptions(args);
+async function printToolPath(context: ToolCommandContext, toolId: string) {
+  const [registry, state] = await Promise.all([loadToolRegistry(context.config), readInstalledToolState()]);
+  const installed = state.installedTools[toolId];
+  if (!installed) {
+    throw new Error(`Tool ${toolId} is not installed.`);
+  }
+
+  const registryTool = getToolRegistryEntry(registry, toolId);
+  const rootPath = registryTool
+    ? join(installed.installDir, registryTool.metadata.rootDirectory)
+    : installed.installDir;
+  console.log(rootPath);
+}
+
+async function printToolsDoctor(context: ToolCommandContext) {
+  const [registry, state] = await Promise.all([loadToolRegistry(context.config), readInstalledToolState()]);
+  const registryUrl = resolveToolRegistryUrl(context.config);
+
+  console.log(`CLI home: ${getCliHome()}`);
+  console.log(`Registry URL: ${registryUrl}`);
+  console.log(`Registry cache: ${getRegistryCachePath()} ${existsSync(getRegistryCachePath()) ? "OK" : "MISSING"}`);
+  console.log(
+    `Installed state: ${getInstalledToolStatePath()} ${existsSync(getInstalledToolStatePath()) ? "OK" : "MISSING"}`,
+  );
+  console.log(`Registry tools: ${registry.tools.length}`);
+  console.log(`Installed tools: ${Object.keys(state.installedTools).length}`);
+  if (context.workspaceRoot) {
+    console.log(`Workspace: ${context.workspaceRoot}`);
+  }
+}
+
+async function activateTool(context: ToolCommandContext, toolId: string, args: string[]) {
+  const root = requireWorkspaceRoot(context);
+  const options = parseToolOptions(args);
+  const summary: string[] = [];
+  const state = await readInstalledToolState();
+
+  if (!options.instanceId) {
+    throw new Error("Usage: vercel-claw tool activate <toolId> --instance <id>");
+  }
+
+  if (!state.installedTools[toolId]) {
+    throw new Error(`Tool ${toolId} is not installed. Run \`vercel-claw tools install ${toolId}\` first.`);
+  }
+
+  await updateWorkspaceInstalledToolsState(root, context.config, toolId, true, summary);
+  await updateInstanceToolsState(root, context.config, options.instanceId, toolId, true, summary);
+
+  console.log(`Activated tool for instance ${options.instanceId}: ${toolId}`);
+  for (const line of summary) {
+    console.log(`- ${line}`);
+  }
+}
+
+async function deactivateTool(context: ToolCommandContext, toolId: string, args: string[]) {
+  const root = requireWorkspaceRoot(context);
+  const options = parseToolOptions(args);
   const summary: string[] = [];
 
   if (!options.instanceId) {
-    throw new Error("Usage: vercel-claw tool activate <toolId> --instance <id> [--dry-run]");
+    throw new Error("Usage: vercel-claw tool deactivate <toolId> --instance <id>");
   }
 
-  const installedToolIds = await getInstalledToolIds(root, config);
-  if (!installedToolIds.has(tool.id)) {
-    throw new Error(`Tool ${tool.id} is not installed. Run \`vercel-claw tool install ${tool.id}\` first.`);
-  }
+  await updateInstanceToolsState(root, context.config, options.instanceId, toolId, false, summary);
 
-  await updateInstanceToolsState(root, config, options.instanceId, tool.id, true, options.dryRun, summary);
-
-  console.log(
-    `Activated tool for instance ${options.instanceId}: ${tool.id}${options.dryRun ? " (dry run)" : ""}`,
-  );
+  console.log(`Deactivated tool for instance ${options.instanceId}: ${toolId}`);
   for (const line of summary) {
     console.log(`- ${line}`);
   }
 }
 
-async function deactivateTool(root: string, config: ClawConfig, toolId: string, args: string[]) {
-  const tool = getRequiredTool(toolId);
-  const options = parseActivateOptions(args);
-  const summary: string[] = [];
-
-  if (!options.instanceId) {
-    throw new Error("Usage: vercel-claw tool deactivate <toolId> --instance <id> [--dry-run]");
-  }
-
-  await updateInstanceToolsState(root, config, options.instanceId, tool.id, false, options.dryRun, summary);
-
-  console.log(
-    `Deactivated tool for instance ${options.instanceId}: ${tool.id}${options.dryRun ? " (dry run)" : ""}`,
-  );
-  for (const line of summary) {
-    console.log(`- ${line}`);
-  }
-}
-
-function parseActivateOptions(args: string[]) {
-  let dryRun = false;
+function parseToolOptions(args: string[]) {
   let force = false;
   let instanceId: string | null = null;
 
   for (let index = 0; index < args.length; index += 1) {
     const value = args[index];
-    if (value === "--dry-run") {
-      dryRun = true;
-      continue;
-    }
-
     if (value === "--force") {
       force = true;
       continue;
@@ -213,15 +353,24 @@ function parseActivateOptions(args: string[]) {
     if (value === "--instance") {
       instanceId = args[index + 1] ?? null;
       index += 1;
-      continue;
     }
   }
 
   return {
-    dryRun,
     force,
     instanceId,
   };
+}
+
+function normalizeAction(action: string) {
+  switch (action) {
+    case "inspect":
+      return "info";
+    case "uninstall":
+      return "remove";
+    default:
+      return action;
+  }
 }
 
 function printCommandGroup(label: string, commands: ToolCommandSpec[]) {
@@ -236,8 +385,8 @@ function printCommandGroup(label: string, commands: ToolCommandSpec[]) {
   }
 }
 
-function getRequiredTool(toolId: string) {
-  const tool = getToolManifest(toolId);
+function getRequiredRegistryTool(registry: ToolRegistryManifest, toolId: string) {
+  const tool = getToolRegistryEntry(registry, toolId);
   if (!tool) {
     throw new Error(`Unknown tool: ${toolId}`);
   }
@@ -245,7 +394,41 @@ function getRequiredTool(toolId: string) {
   return tool;
 }
 
-async function getInstalledToolIds(root: string, config: ClawConfig) {
+function describeInstalledStatus(installedVersion: string | undefined, registryVersion: string) {
+  if (!installedVersion) {
+    return "not installed";
+  }
+
+  if (isVersionNewer(installedVersion, registryVersion)) {
+    return `update available (${installedVersion} -> ${registryVersion})`;
+  }
+
+  if (installedVersion !== registryVersion) {
+    return `installed (${installedVersion})`;
+  }
+
+  return `installed (${installedVersion})`;
+}
+
+function isVersionNewer(installedVersion: string, registryVersion: string) {
+  const installed = coerce(installedVersion);
+  const available = coerce(registryVersion);
+  if (!installed || !available) {
+    return installedVersion !== registryVersion;
+  }
+
+  return gt(available, installed);
+}
+
+function requireWorkspaceRoot(context: ToolCommandContext) {
+  if (!context.workspaceRoot) {
+    throw new Error("This command only works inside a vercel-claw workspace.");
+  }
+
+  return context.workspaceRoot;
+}
+
+async function getWorkspaceInstalledToolIds(root: string, config: ClawConfig) {
   const toolsPath = resolve(
     root,
     config.deploymentsDir,
@@ -260,62 +443,11 @@ async function getInstalledToolIds(root: string, config: ClawConfig) {
   return new Set(manifest.installedToolIds ?? []);
 }
 
-async function ensurePackageDependencies(
-  appDir: string,
-  cliDir: string,
-  tool: ToolManifest,
-  dryRun: boolean,
-  summary: string[],
-) {
-  for (const dependency of tool.dependencies) {
-    const cwd = dependency.target === "app" ? appDir : cliDir;
-    const packageJsonPath = join(cwd, "package.json");
-    const manifest = (await Bun.file(packageJsonPath).json()) as {
-      dependencies?: Record<string, string>;
-      devDependencies?: Record<string, string>;
-    };
-    const missingPackages = dependency.packages.filter(
-      (pkg) => !manifest.dependencies?.[pkg] && !manifest.devDependencies?.[pkg],
-    );
-
-    if (missingPackages.length === 0) {
-      summary.push(`dependencies already installed for ${dependency.target}: ${dependency.packages.join(", ")}`);
-      continue;
-    }
-
-    summary.push(
-      `${dryRun ? "would install" : "installed"} ${dependency.target} packages: ${missingPackages.join(", ")}`,
-    );
-
-    if (!dryRun) {
-      await runCommand(["bun", "add", ...missingPackages], cwd);
-    }
-  }
-}
-
-async function runToolCommands(
-  root: string,
-  appDir: string,
-  cliDir: string,
-  commands: ToolCommandSpec[],
-  dryRun: boolean,
-  summary: string[],
-) {
-  for (const command of commands) {
-    const cwd = resolveCommandCwd(root, appDir, cliDir, command.cwd);
-    summary.push(`${dryRun ? "would run" : "ran"} ${command.label}: ${command.command.join(" ")}`);
-    if (!dryRun) {
-      await runCommand(command.command, cwd);
-    }
-  }
-}
-
-async function updateInstalledToolsState(
+async function updateWorkspaceInstalledToolsState(
   root: string,
   config: ClawConfig,
   toolId: string,
   install: boolean,
-  dryRun: boolean,
   summary: string[],
 ) {
   const installedToolsPath = resolve(
@@ -331,12 +463,8 @@ async function updateInstalledToolsState(
   installedTools.installedToolIds = install
     ? uniqueIds([...installedTools.installedToolIds, toolId])
     : installedTools.installedToolIds.filter((id) => id !== toolId);
-  summary.push(
-    `${dryRun ? "would update" : "updated"} ${relativeFromRoot(root, installedToolsPath)}`,
-  );
-  if (!dryRun) {
-    await writeJson(installedToolsPath, installedTools);
-  }
+  await writeJson(installedToolsPath, installedTools);
+  summary.push(`updated ${relativeFromRoot(root, installedToolsPath)}`);
 }
 
 async function updateInstanceToolsState(
@@ -345,7 +473,6 @@ async function updateInstanceToolsState(
   instanceId: string,
   toolId: string,
   activate: boolean,
-  dryRun: boolean,
   summary: string[],
 ) {
   const instanceRoot = resolve(
@@ -369,60 +496,9 @@ async function updateInstanceToolsState(
     ? uniqueIds([...toolsConfig.exposedToolIds, toolId])
     : toolsConfig.exposedToolIds.filter((id) => id !== toolId);
 
-  summary.push(`${dryRun ? "would update" : "updated"} ${relativeFromRoot(root, toolsPath)}`);
-  if (!dryRun) {
-    await writeJson(instancePath, instanceManifest);
-    await writeJson(toolsPath, toolsConfig);
-  }
-}
-
-async function writeToolMetadata(
-  cacheDir: string,
-  tool: ToolManifest,
-  action: "install" | "uninstall",
-  options: { dryRun: boolean; force: boolean; instanceId: string | null },
-  summary: string[],
-) {
-  summary.push(
-    `${options.dryRun ? "would write" : "wrote"} ${action} metadata in ${join(TOOL_CACHE_DIR, tool.cacheSubdir)}`,
-  );
-
-  if (options.dryRun) {
-    return;
-  }
-
-  await mkdir(cacheDir, { recursive: true });
-  await writeJson(join(cacheDir, `${action}.json`), {
-    toolId: tool.id,
-    action,
-    force: options.force,
-    instanceId: options.instanceId,
-    updatedAt: new Date().toISOString(),
-  });
-}
-
-async function ensureDir(path: string, dryRun: boolean, summary: string[]) {
-  summary.push(`${dryRun ? "would prepare" : "prepared"} cache directory ${path}`);
-  if (!dryRun) {
-    await mkdir(path, { recursive: true });
-  }
-}
-
-function resolveCommandCwd(
-  root: string,
-  appDir: string,
-  cliDir: string,
-  cwd: ToolCommandSpec["cwd"],
-) {
-  switch (cwd) {
-    case "app":
-      return appDir;
-    case "cli":
-      return cliDir;
-    case "workspace":
-    default:
-      return root;
-  }
+  await writeJson(instancePath, instanceManifest);
+  await writeJson(toolsPath, toolsConfig);
+  summary.push(`updated ${relativeFromRoot(root, toolsPath)}`);
 }
 
 async function writeJson(path: string, value: unknown) {
@@ -465,18 +541,4 @@ async function getToolInstanceUsages(root: string, config: ClawConfig, toolId: s
   }
 
   return instanceIds.sort();
-}
-
-async function runCommand(command: string[], cwd: string) {
-  console.log(`$ (${cwd}) ${command.join(" ")}`);
-  const child = Bun.spawn(command, {
-    cwd,
-    stdin: "inherit",
-    stdout: "inherit",
-    stderr: "inherit",
-  });
-  const exitCode = await child.exited;
-  if (exitCode !== 0) {
-    throw new Error(`Command failed: ${command.join(" ")}`);
-  }
 }

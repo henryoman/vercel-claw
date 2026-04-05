@@ -1,7 +1,8 @@
 {
   "defaultModel": "gpt-5",
   "promptFiles": [
-    "prompts/system.md"
+    "prompts/system.md",
+    "prompts/modes/default.md"
   ],
   "toolsetFile": "toolsets/default.json",
   "integrations": []
