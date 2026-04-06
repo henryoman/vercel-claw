@@ -9,7 +9,7 @@ import {
 import { tool } from "ai";
 import { stat } from "node:fs/promises";
 import { z } from "zod";
-import { buildToolContextIndex } from "../context-utils/tool-context";
+import { buildToolContextIndex } from "../context-utils/buildToolContextIndex";
 import {
   toolCatalogResultSchema,
   toolContextResultSchema,
