@@ -1,6 +1,5 @@
 import { DEFAULT_INSTANCE_ID, type TelegramWebhookRequest, type TelegramWebhookResponse } from "@vercel-claw/core";
-import { generateThreadReply } from "@/agent/chat";
-import { sendTelegramMessage } from "@/lib/connectors/telegram";
+import { startThreadReplyWorkflow } from "@/lib/server/thread-workflows";
 import {
   appendMessage,
   createOrGetExternalThread,
@@ -51,19 +50,15 @@ export async function handleTelegramWebhook(
     externalMessageId,
   });
 
-  const reply = await generateThreadReply(thread.id, "telegram");
-
-  if (process.env.TELEGRAM_BOT_TOKEN) {
-    await sendTelegramMessage(
-      process.env.TELEGRAM_BOT_TOKEN,
-      telegramMessage.chat.id,
-      reply.assistantMessage.content,
-    );
-  }
+  await startThreadReplyWorkflow({
+    threadId: thread.id,
+    surface: "telegram",
+    telegramChatId: telegramMessage.chat.id,
+  });
 
   return {
     ok: true,
     threadId: thread.id,
-    reply: reply.assistantMessage.content,
+    reply: null,
   };
 }
