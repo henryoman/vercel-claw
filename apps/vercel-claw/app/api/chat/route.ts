@@ -1,5 +1,5 @@
 import type { ChatSendRequest } from "@vercel-claw/core";
-import { streamChatResponse } from "@/lib/server/chat";
+import { streamChatResponse } from "@/agent/chat";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;

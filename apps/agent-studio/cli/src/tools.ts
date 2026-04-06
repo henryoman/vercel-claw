@@ -104,9 +104,10 @@ async function listTools(context: ToolCommandContext) {
     console.log(`  version: ${tool.version}`);
     console.log(`  status: ${status}`);
     if (workspaceInstalledToolIds) {
-      console.log(
-        `  workspace: ${workspaceInstalledToolIds.has(tool.id) ? "enabled in deployment" : "not enabled in deployment"}`,
-      );
+      console.log(`  workspace: ${describeWorkspaceStatus(tool, workspaceInstalledToolIds)}`);
+    }
+    if (tool.memberToolIds.length > 0) {
+      console.log(`  members: ${tool.memberToolIds.join(", ")}`);
     }
     console.log(`  description: ${tool.description}`);
   }
@@ -124,6 +125,7 @@ async function printToolInfo(context: ToolCommandContext, toolId: string) {
   console.log(`  activationScope: ${tool.activationScope}`);
   console.log(`  installedVersion: ${installed?.version ?? "not installed"}`);
   console.log(`  installedPath: ${installed?.installDir ?? "n/a"}`);
+  console.log(`  memberTools: ${tool.memberToolIds.length > 0 ? tool.memberToolIds.join(", ") : "none"}`);
   console.log(`  bundleUrl: ${tool.bundle.url}`);
   console.log(`  checksum: ${tool.bundle.sha256}`);
   console.log(`  bundleFormat: ${tool.bundle.format}`);
@@ -165,7 +167,15 @@ async function installTool(context: ToolCommandContext, toolId: string, args: st
   }
 
   if (context.workspaceRoot) {
-    await updateWorkspaceInstalledToolsState(context.workspaceRoot, context.config, tool.id, true, summary);
+    if (isBundleTool(tool)) {
+      for (const memberToolId of tool.memberToolIds) {
+        getRequiredRegistryTool(registry, memberToolId);
+        await updateWorkspaceInstalledToolsState(context.workspaceRoot, context.config, memberToolId, true, summary);
+      }
+      summary.push(`enabled bundle members in deployment: ${tool.memberToolIds.join(", ")}`);
+    } else {
+      await updateWorkspaceInstalledToolsState(context.workspaceRoot, context.config, tool.id, true, summary);
+    }
   }
 
   console.log(`Installed tool: ${tool.id}`);
@@ -223,6 +233,8 @@ async function updateTools(context: ToolCommandContext, toolId: string | undefin
 
 async function removeTool(context: ToolCommandContext, toolId: string, args: string[]) {
   const options = parseToolOptions(args);
+  const registry = await loadToolRegistry(context.config);
+  const tool = getRequiredRegistryTool(registry, toolId);
   const state = await readInstalledToolState();
   const installed = state.installedTools[toolId];
   const summary: string[] = [];
@@ -259,7 +271,11 @@ async function removeTool(context: ToolCommandContext, toolId: string, args: str
   summary.push(`removed local bundle at ${installed.installDir}`);
 
   if (context.workspaceRoot) {
-    await updateWorkspaceInstalledToolsState(context.workspaceRoot, context.config, toolId, false, summary);
+    if (isBundleTool(tool)) {
+      summary.push(`left deployment-installed member tools unchanged: ${tool.memberToolIds.join(", ")}`);
+    } else {
+      await updateWorkspaceInstalledToolsState(context.workspaceRoot, context.config, toolId, false, summary);
+    }
   }
 
   console.log(`Removed tool: ${toolId}`);
@@ -309,7 +325,10 @@ async function activateTool(context: ToolCommandContext, toolId: string, args: s
     throw new Error("Usage: vercel-claw tool activate <toolId> --instance <id>");
   }
 
-  getRequiredRegistryTool(registry, toolId);
+  const tool = getRequiredRegistryTool(registry, toolId);
+  if (isBundleTool(tool)) {
+    throw new Error(`Tool bundle ${toolId} cannot be activated directly. Activate one of its members instead.`);
+  }
 
   await updateWorkspaceInstalledToolsState(root, context.config, toolId, true, summary);
   await updateInstanceToolsState(root, context.config, options.instanceId, toolId, true, summary);
@@ -325,9 +344,15 @@ async function deactivateTool(context: ToolCommandContext, toolId: string, args:
   const root = requireWorkspaceRoot(context);
   const options = parseToolOptions(args);
   const summary: string[] = [];
+  const registry = await loadToolRegistry(context.config);
 
   if (!options.instanceId) {
     throw new Error("Usage: vercel-claw tool deactivate <toolId> --instance <id>");
+  }
+
+  const tool = getRequiredRegistryTool(registry, toolId);
+  if (isBundleTool(tool)) {
+    throw new Error(`Tool bundle ${toolId} cannot be deactivated directly. Deactivate one of its members instead.`);
   }
 
   await updateInstanceToolsState(root, context.config, options.instanceId, toolId, false, summary);
@@ -391,6 +416,27 @@ function getRequiredRegistryTool(registry: ToolRegistryManifest, toolId: string)
   }
 
   return tool;
+}
+
+function isBundleTool(tool: ToolRegistryEntry) {
+  return tool.memberToolIds.length > 0;
+}
+
+function describeWorkspaceStatus(tool: ToolRegistryEntry, installedToolIds: Set<string>) {
+  if (!isBundleTool(tool)) {
+    return installedToolIds.has(tool.id) ? "enabled in deployment" : "not enabled in deployment";
+  }
+
+  const enabledMembers = tool.memberToolIds.filter((toolId) => installedToolIds.has(toolId));
+  if (enabledMembers.length === 0) {
+    return "bundle members not enabled in deployment";
+  }
+
+  if (enabledMembers.length === tool.memberToolIds.length) {
+    return "all bundle members enabled in deployment";
+  }
+
+  return `some bundle members enabled in deployment (${enabledMembers.join(", ")})`;
 }
 
 function describeInstalledStatus(installedVersion: string | undefined, registryVersion: string) {

@@ -3,6 +3,8 @@ import { agentBrowserInstallSpec } from "../../../../tools/agent-browser/install
 import type { ShippedToolInstallSpec } from "../../../../tools/manifest-types";
 import { notionTool } from "../../../../tools/notion/activate";
 import { notionInstallSpec } from "../../../../tools/notion/install";
+import { weatherTool } from "../../../../tools/weather/activate";
+import { weatherInstallSpec } from "../../../../tools/weather/install";
 import type { ToolSourceManifest } from "./tool-registry";
 
 export const TOOL_CACHE_DIR = ".vercel-claw-cache/tools";
@@ -27,13 +29,14 @@ function createToolManifest(
   return {
     ...install,
     ...runtime,
-    shippedToolDir: `packages/tools/${install.id}`,
+    shippedToolDir: `tools/${install.id}`,
   };
 }
 
 export const toolCatalog: ToolSourceManifest[] = [
   createToolManifest(notionInstallSpec, notionTool),
   createToolManifest(agentBrowserInstallSpec, agentBrowserTool),
+  createToolManifest(weatherInstallSpec, weatherTool),
 ];
 
 export function listToolManifests() {

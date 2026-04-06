@@ -14,7 +14,6 @@ import {
   Message,
   MessageAction,
   MessageActions,
-  MessageAvatar,
   MessageContent,
   MessageResponse,
 } from "@/components/ai-elements/message";
@@ -417,13 +416,6 @@ export function ChatShell() {
                           : "user"
                       }
                     >
-                      <MessageAvatar
-                        from={
-                          message.role === "assistant" || message.role === "system"
-                            ? message.role
-                            : "user"
-                        }
-                      />
                       <div className="message-stack">
                         <MessageContent>
                           {message.parts.map((part, index) => {

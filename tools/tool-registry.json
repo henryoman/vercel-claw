@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-04-05T02:49:04.769Z",
+  "generatedAt": "2026-04-06T04:16:57.702Z",
   "sourceRepo": "https://github.com/henryoman/vercel-claw",
   "tools": [
     {
@@ -11,12 +11,12 @@
       "kind": "mcp",
       "runtime": "mcp",
       "activationScope": "instance",
-      "docsFile": "knowledge/mcp-docs.md",
+      "docsFile": "mcp-docs.md",
       "mcpServerName": "notion",
       "defaultReadTargets": [
-        "packages/tools/notion/README.md",
-        "packages/tools/notion/mcp.json",
-        "packages/tools/notion/knowledge/mcp-docs.md"
+        "tools/notion/README.md",
+        "tools/notion/mcp.json",
+        "tools/notion/mcp-docs.md"
       ],
       "capabilities": [
         "Hosted MCP server metadata",
@@ -50,14 +50,14 @@
       "verifyCommands": [],
       "bundle": {
         "url": "file:///Volumes/T9/cursor/vercel-claw/.dist/tool-bundles/notion-0.1.0.zip",
-        "sha256": "1e0cf974be40a0b6aca863be1e4caef647873fe784a719c4241b230748119595",
+        "sha256": "7462eddb83af1ac1c7f85b69e5cbfb9afdcd583ad31a13eccdc5ce48eff5760e",
         "format": "zip",
-        "sizeBytes": 3576
+        "sizeBytes": 3354
       },
       "metadata": {
         "rootDirectory": "notion",
         "mcpConfigPath": "notion/mcp.json",
-        "knowledgeDirectory": "notion/knowledge",
+        "knowledgeDirectory": null,
         "skillsDirectory": "notion/skills",
         "readmePath": "notion/README.md"
       }
@@ -72,9 +72,9 @@
       "activationScope": "instance",
       "docsFile": "knowledge/about.md",
       "defaultReadTargets": [
-        "packages/tools/agent-browser/README.md",
-        "packages/tools/agent-browser/mcp.json",
-        "packages/tools/agent-browser/knowledge/about.md"
+        "tools/agent-browser/mcp.json",
+        "tools/agent-browser/knowledge/about.md",
+        "tools/agent-browser/knowledge/README.md"
       ],
       "capabilities": [
         "Browser automation and page interaction",
@@ -214,16 +214,175 @@
       ],
       "bundle": {
         "url": "file:///Volumes/T9/cursor/vercel-claw/.dist/tool-bundles/agent-browser-0.1.0.zip",
-        "sha256": "0be5f987ba9d9213d4983982c34e68e6931baa6df5e60607b0c9f2b79364a238",
+        "sha256": "429a8c05f8bd883e04bcd812cb06be73bd88353534193ced9bf888d0a092d286",
         "format": "zip",
-        "sizeBytes": 3438
+        "sizeBytes": 2929
       },
       "metadata": {
         "rootDirectory": "agent-browser",
         "mcpConfigPath": "agent-browser/mcp.json",
         "knowledgeDirectory": "agent-browser/knowledge",
         "skillsDirectory": "agent-browser/skills",
-        "readmePath": "agent-browser/README.md"
+        "readmePath": null
+      }
+    },
+    {
+      "id": "weather",
+      "version": "0.1.0",
+      "label": "Weather",
+      "description": "Deterministic weather lookup through a fixed Bun wrapper.",
+      "kind": "cli",
+      "runtime": "app",
+      "activationScope": "instance",
+      "docsFile": "README.md",
+      "defaultReadTargets": [
+        "tools/weather/README.md",
+        "tools/weather/run.ts",
+        "tools/weather/wttr.md"
+      ],
+      "capabilities": [
+        "Deterministic weather lookup for an explicit location",
+        "Fixed metric JSON output",
+        "No direct model access to curl"
+      ],
+      "contextHints": [
+        "Use this tool when the user asks for weather at a named location.",
+        "Do not ask the model to construct raw curl commands for wttr.in."
+      ],
+      "promptHints": [
+        "Always provide a location string.",
+        "Expect normalized JSON instead of free-form terminal weather output."
+      ],
+      "execution": {
+        "runner": "cli",
+        "sandbox": "required",
+        "workingDirectory": "thread",
+        "description": "Runs a checked-in Bun wrapper that performs a fixed wttr.in curl request.",
+        "supportsBackground": false,
+        "operations": [
+          {
+            "id": "current",
+            "label": "Current weather",
+            "description": "Fetch current weather and today's forecast for a specific location.",
+            "arguments": [
+              {
+                "key": "location",
+                "type": "string",
+                "description": "Human-readable location name, for example London or Paris, France.",
+                "required": true
+              }
+            ]
+          }
+        ]
+      },
+      "requiredEnvVars": [],
+      "optionalEnvVars": [],
+      "dependencies": [],
+      "installCommands": [],
+      "verifyCommands": [],
+      "bundle": {
+        "url": "file:///Volumes/T9/cursor/vercel-claw/.dist/tool-bundles/weather-0.1.0.zip",
+        "sha256": "09af21bd71e03dca77a2ee3b802d9b3701d3617f1c867bcbd5876de20008435d",
+        "format": "zip",
+        "sizeBytes": 13964
+      },
+      "metadata": {
+        "rootDirectory": "weather",
+        "mcpConfigPath": null,
+        "knowledgeDirectory": null,
+        "skillsDirectory": null,
+        "readmePath": "weather/README.md"
+      }
+    },
+    {
+      "id": "everyday-bundle",
+      "version": "0.1.0",
+      "label": "Everyday Bundle",
+      "description": "Bundle of day-to-day tools for notes and quick utility lookups.",
+      "kind": "package",
+      "runtime": "metadata",
+      "activationScope": "shared",
+      "memberToolIds": [
+        "notion",
+        "weather"
+      ],
+      "docsFile": null,
+      "defaultReadTargets": [],
+      "capabilities": [
+        "Installs a curated everyday tool bundle",
+        "Enables Notion and Weather together",
+        "Provides install-time grouping metadata"
+      ],
+      "contextHints": [
+        "This is a bundle entry for installation and organization, not a directly runnable tool.",
+        "Use the member tool ids when you need tool-specific docs or runtime behavior."
+      ],
+      "promptHints": [
+        "Expand to the member tools before making runtime assumptions.",
+        "Do not expose the bundle id as an instance tool."
+      ],
+      "requiredEnvVars": [],
+      "optionalEnvVars": [],
+      "dependencies": [],
+      "installCommands": [],
+      "verifyCommands": [],
+      "bundle": {
+        "url": "file:///Volumes/T9/cursor/vercel-claw/.dist/tool-bundles/everyday-bundle-0.1.0.zip",
+        "sha256": "e4e5184f1db42e88eedeec48a783954fa5d781862ed0ccd58afb71aa3898627f",
+        "format": "zip",
+        "sizeBytes": 554
+      },
+      "metadata": {
+        "rootDirectory": "everyday-bundle",
+        "mcpConfigPath": null,
+        "knowledgeDirectory": null,
+        "skillsDirectory": null,
+        "readmePath": "everyday-bundle/README.md"
+      }
+    },
+    {
+      "id": "dev-tools-bundle",
+      "version": "0.1.0",
+      "label": "Dev Tools Bundle",
+      "description": "Bundle of development-focused tools for browser-driven debugging and inspection.",
+      "kind": "package",
+      "runtime": "metadata",
+      "activationScope": "shared",
+      "memberToolIds": [
+        "agent-browser"
+      ],
+      "docsFile": null,
+      "defaultReadTargets": [],
+      "capabilities": [
+        "Installs a curated development tool bundle",
+        "Enables browser debugging and inspection workflows",
+        "Provides install-time grouping metadata"
+      ],
+      "contextHints": [
+        "This is a bundle entry for installation and organization, not a directly runnable tool.",
+        "Use the member tool ids when you need tool-specific docs or runtime behavior."
+      ],
+      "promptHints": [
+        "Expand to the member tools before making runtime assumptions.",
+        "Do not expose the bundle id as an instance tool."
+      ],
+      "requiredEnvVars": [],
+      "optionalEnvVars": [],
+      "dependencies": [],
+      "installCommands": [],
+      "verifyCommands": [],
+      "bundle": {
+        "url": "file:///Volumes/T9/cursor/vercel-claw/.dist/tool-bundles/dev-tools-bundle-0.1.0.zip",
+        "sha256": "5b76d92af56c0fe11ce1d54fff140a8d2303edda93e0240384bb05b6f5c987ab",
+        "format": "zip",
+        "sizeBytes": 569
+      },
+      "metadata": {
+        "rootDirectory": "dev-tools-bundle",
+        "mcpConfigPath": null,
+        "knowledgeDirectory": null,
+        "skillsDirectory": null,
+        "readmePath": "dev-tools-bundle/README.md"
       }
     }
   ]

@@ -1,5 +1,7 @@
 import "server-only";
 
+import { execFile } from "node:child_process";
+import { resolve } from "node:path";
 import {
   listToolManifests,
   type RuntimeExecutionConfig,
@@ -8,10 +10,13 @@ import {
 } from "@vercel-claw/core";
 import { tool } from "ai";
 import { z } from "zod";
-import { createTextArtifact } from "./artifacts";
-import { runSandboxCommand } from "./sandbox/executor";
-import { ensureToolBootstrapped, getOrCreateInstanceSandbox } from "./sandbox/manager";
-import { finishSandboxRun, startSandboxRun } from "./sandbox-runs";
+import { createTextArtifact } from "@/lib/server/artifacts";
+import { runSandboxCommand } from "@/lib/server/sandbox/executor";
+import {
+  ensureToolBootstrapped,
+  getOrCreateInstanceSandbox,
+} from "@/lib/server/sandbox/manager";
+import { finishSandboxRun, startSandboxRun } from "@/lib/server/sandbox-runs";
 import { executableToolResultSchema, type ExecutableToolResult } from "./tool-contracts";
 
 const toolArgumentScalarSchema = z.union([z.string(), z.number(), z.boolean()]);
@@ -105,7 +110,11 @@ async function executeManifestTool(
     throw new Error(`Unsupported operation "${context.input.operation}" for tool ${manifest.id}.`);
   }
 
-  const normalizedArguments = normalizeToolArguments(manifest, context.input.operation, context.input.arguments);
+  const normalizedArguments = normalizeToolArguments(
+    manifest,
+    context.input.operation,
+    context.input.arguments,
+  );
   const sandboxContext = await getOrCreateInstanceSandbox({
     deploymentId: context.deploymentId,
     instanceId: context.instanceId,
@@ -216,8 +225,56 @@ async function executeRunnerOperation(input: {
   switch (input.manifest.id) {
     case "agent-browser":
       return await executeAgentBrowserOperation(input);
+    case "weather":
+      return await executeWeatherOperation(input);
     default:
       throw new Error(`No executor is registered for tool ${input.manifest.id}.`);
+  }
+}
+
+async function executeWeatherOperation(input: {
+  manifest: ToolSourceManifest;
+  sandboxContext: Awaited<ReturnType<typeof getOrCreateInstanceSandbox>>;
+  operation: string;
+  args: Record<string, ToolArgumentScalar>;
+  background: boolean;
+}) {
+  switch (input.operation) {
+    case "current": {
+      const location = requireStringArgument(input.args, "location");
+      const scriptPath = resolve(process.cwd(), "tools/weather/run.ts");
+      const result = await runHostCommand("bun", [scriptPath, location]);
+      const payload = result.exitCode === 0 ? parseJsonObject(result.stdout) : {};
+      const resolvedLocation = readNestedString(payload, ["resolvedLocation"]);
+      const condition = readNestedString(payload, ["condition"]);
+      const temperatureC = readNestedNumber(payload, ["temperatureC"]);
+
+      return {
+        status: "completed" as const,
+        commandId: null,
+        exitCode: result.exitCode,
+        stdout: result.stdout,
+        stderr: result.stderr,
+        summary:
+          result.exitCode === 0
+            ? buildWeatherSummary({
+                requestedLocation: location,
+                resolvedLocation,
+                condition,
+                temperatureC,
+              })
+            : `Weather lookup failed for ${location}.`,
+        data: compactData({
+          requestedLocation: location,
+          resolvedLocation: resolvedLocation || null,
+          condition: condition || null,
+          temperatureC,
+        }),
+        resultArtifactText: result.stdout.trim() || result.stderr.trim() || null,
+      };
+    }
+    default:
+      throw new Error(`Unsupported weather operation "${input.operation}".`);
   }
 }
 
@@ -382,7 +439,8 @@ async function executeAgentBrowserOperation(input: {
       };
     }
     case "wait": {
-      const loadState = typeof input.args.loadState === "string" ? input.args.loadState : "networkidle";
+      const loadState =
+        typeof input.args.loadState === "string" ? input.args.loadState : "networkidle";
       const result = await runSandboxCommand(
         input.sandboxContext.sandbox,
         commandPath,
@@ -556,6 +614,18 @@ function parseJsonObject(value: string) {
   }
 }
 
+function readNestedNumber(value: Record<string, unknown>, path: string[]) {
+  let current: unknown = value;
+  for (const segment of path) {
+    if (!current || typeof current !== "object" || !(segment in current)) {
+      return null;
+    }
+    current = (current as Record<string, unknown>)[segment];
+  }
+
+  return typeof current === "number" && Number.isFinite(current) ? current : null;
+}
+
 function readNestedString(value: Record<string, unknown>, path: string[]) {
   let current: unknown = value;
   for (const segment of path) {
@@ -566,6 +636,69 @@ function readNestedString(value: Record<string, unknown>, path: string[]) {
   }
 
   return typeof current === "string" ? current : "";
+}
+
+function buildWeatherSummary(input: {
+  requestedLocation: string;
+  resolvedLocation: string;
+  condition: string;
+  temperatureC: number | null;
+}) {
+  const location = input.resolvedLocation || input.requestedLocation;
+
+  if (input.condition && input.temperatureC !== null) {
+    return `${location}: ${input.condition}, ${input.temperatureC} C.`;
+  }
+
+  if (input.condition) {
+    return `${location}: ${input.condition}.`;
+  }
+
+  return `Fetched weather for ${location}.`;
+}
+
+// The current sandbox runtime is Node-only, so the weather tool runs the
+// checked-in Bun wrapper on the app host and returns the normalized JSON output.
+function runHostCommand(command: string, args: string[]) {
+  return new Promise<{
+    exitCode: number | null;
+    stdout: string;
+    stderr: string;
+  }>((resolveCommand, rejectCommand) => {
+    execFile(
+      command,
+      args,
+      {
+        cwd: process.cwd(),
+        env: process.env,
+        timeout: 15_000,
+        maxBuffer: 1_024 * 1_024,
+      },
+      (error, stdout, stderr) => {
+        if (!error) {
+          resolveCommand({
+            exitCode: 0,
+            stdout,
+            stderr,
+          });
+          return;
+        }
+
+        const commandError = error as NodeJS.ErrnoException & { code?: number | string };
+
+        if (commandError.code === "ENOENT") {
+          rejectCommand(new Error(`Required binary "${command}" is not available on PATH.`));
+          return;
+        }
+
+        resolveCommand({
+          exitCode: typeof commandError.code === "number" ? commandError.code : 1,
+          stdout,
+          stderr: stderr || commandError.message,
+        });
+      },
+    );
+  });
 }
 
 function compactData(values: Record<string, ToolArgumentScalar | null | undefined>) {

@@ -148,6 +148,25 @@ export const toolContextResultSchema = z
   })
   .strict();
 
+export const pastMessageSchema = z
+  .object({
+    id: z.string().min(1),
+    role: z.enum(["system", "user", "assistant", "tool"]),
+    content: z.string(),
+    createdAt: z.number().int().nonnegative(),
+  })
+  .strict();
+
+export const readPastMessagesResultSchema = z
+  .object({
+    kind: z.literal("past-messages"),
+    totalMessages: z.number().int().nonnegative(),
+    offset: z.number().int().nonnegative(),
+    hasMore: z.boolean(),
+    messages: z.array(pastMessageSchema),
+  })
+  .strict();
+
 export type FileReadResult = z.infer<typeof fileReadResultSchema>;
 export type DirectoryReadResult = z.infer<typeof directoryReadResultSchema>;
 export type SingleReadResult = z.infer<typeof singleReadResultSchema>;
@@ -157,6 +176,7 @@ export type ToolCatalogItem = z.infer<typeof toolCatalogItemSchema>;
 export type ToolCatalogResult = z.infer<typeof toolCatalogResultSchema>;
 export type ToolContextIndex = z.infer<typeof toolContextIndexSchema>;
 export type ToolContextResult = z.infer<typeof toolContextResultSchema>;
+export type ReadPastMessagesResult = z.infer<typeof readPastMessagesResultSchema>;
 
 export const executableToolResultSchema = z
   .object({

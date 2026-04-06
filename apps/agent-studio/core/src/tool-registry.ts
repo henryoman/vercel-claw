@@ -58,6 +58,7 @@ export interface ToolRegistryEntry extends ToolRuntimeMetadata {
   description: string;
   kind: ShippedToolKind;
   activationScope: ShippedToolActivationScope;
+  memberToolIds: string[];
   requiredEnvVars: string[];
   optionalEnvVars: string[];
   dependencies: ToolPackageDependency[];

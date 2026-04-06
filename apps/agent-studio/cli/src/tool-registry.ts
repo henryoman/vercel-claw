@@ -82,6 +82,9 @@ function normalizeToolEntry(raw: Partial<ToolRegistryEntry>): ToolRegistryEntry 
     kind: raw.kind ?? "hybrid",
     runtime: raw.runtime ?? "metadata",
     activationScope: raw.activationScope ?? "instance",
+    memberToolIds: Array.isArray(raw.memberToolIds)
+      ? raw.memberToolIds.filter((value): value is string => typeof value === "string" && value.length > 0)
+      : [],
     docsFile: raw.docsFile ?? null,
     mcpServerName: raw.mcpServerName,
     defaultReadTargets: Array.isArray(raw.defaultReadTargets) ? raw.defaultReadTargets : [],

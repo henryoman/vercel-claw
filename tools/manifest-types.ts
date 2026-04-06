@@ -31,6 +31,7 @@ export interface ShippedToolInstallSpec {
   description: string;
   kind: ShippedToolKind;
   activationScope: ShippedToolActivationScope;
+  memberToolIds?: string[];
   dependencies: ShippedToolPackageDependency[];
   installCommands: ShippedToolCommandSpec[];
   verifyCommands: ShippedToolCommandSpec[];

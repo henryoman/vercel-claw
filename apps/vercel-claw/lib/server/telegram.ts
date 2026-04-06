@@ -1,6 +1,6 @@
 import { DEFAULT_INSTANCE_ID, type TelegramWebhookRequest, type TelegramWebhookResponse } from "@vercel-claw/core";
+import { generateThreadReply } from "@/agent/chat";
 import { sendTelegramMessage } from "@/lib/connectors/telegram";
-import { generateThreadReply } from "./chat";
 import {
   appendMessage,
   createOrGetExternalThread,

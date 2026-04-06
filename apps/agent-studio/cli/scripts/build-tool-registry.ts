@@ -12,7 +12,7 @@ import {
 } from "@vercel-claw/core";
 import { zipSync } from "fflate";
 
-const workspaceRoot = resolve(import.meta.dir, "../../..");
+const workspaceRoot = resolve(import.meta.dir, "../../../..");
 const args = parseArgs(Bun.argv.slice(2));
 const outputDir = resolve(workspaceRoot, args.outputDir ?? ".dist/tool-bundles");
 const registryPath = resolve(workspaceRoot, args.registryPath ?? "tool-registry.json");
@@ -52,6 +52,7 @@ async function buildRegistryEntry(tool: ToolSourceManifest): Promise<ToolRegistr
     kind: tool.kind,
     runtime: tool.runtime,
     activationScope: tool.activationScope,
+    memberToolIds: tool.memberToolIds ?? [],
     docsFile: tool.docsFile,
     mcpServerName: tool.mcpServerName,
     defaultReadTargets: tool.defaultReadTargets,
