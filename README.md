@@ -4,6 +4,10 @@
 
 # vercel-claw
 
+`vercel-claw` is a personal Vercel-native agent control plane for managing agent instances, runtime config, conversations, tool exposure, and sandbox execution from a real web app instead of from one long-lived shell on a VPS.
+
+The app separates control plane, state, and execution: the Next.js app is the UI and API surface, Convex stores durable runtime state, and each deployed instance runs tools inside its own persistent Vercel sandbox. There is no public download yet.
+
 <p align="center">
   <a href="https://bun.sh"><img alt="Bun 1.3.11" src="https://img.shields.io/badge/Bun-1.3.11-000000?style=flat-square&logo=bun&logoColor=white" /></a>
   <a href="https://www.typescriptlang.org"><img alt="TypeScript 6.0.2" src="https://img.shields.io/badge/TypeScript-6.0.2-3178C6?style=flat-square&logo=typescript&logoColor=white" /></a>
@@ -13,11 +17,26 @@
   <a href="https://ai-sdk.dev"><img alt="AI SDK 6.0.146" src="https://img.shields.io/badge/AI%20SDK-6.0.146-111111?style=flat-square&logo=vercel&logoColor=white" /></a>
 </p>
 
+<p align="center">
+  <a href="https://turborepo.com"><img alt="Turborepo 2.9.4" src="https://img.shields.io/badge/Turborepo-2.9.4-EF4444?style=flat-square&logo=turborepo&logoColor=white" /></a>
+  <a href="https://justbash.dev"><img alt="just-bash 2.14.0" src="https://img.shields.io/badge/just--bash-2.14.0-111111?style=flat-square&logo=gnubash&logoColor=white" /></a>
+  <a href="https://github.com/googleworkspace/cli"><img alt="GWS CLI 0.22.5" src="https://img.shields.io/badge/GWS%20CLI-0.22.5-4285F4?style=flat-square&logo=google&logoColor=white" /></a>
+  <a href="https://vercel.com/workflow"><img alt="Vercel Workflow 4.2.0-beta.74" src="https://img.shields.io/badge/Vercel%20Workflow-4.2.0--beta.74-000000?style=flat-square&logo=vercel&logoColor=white" /></a>
+  <a href="https://vercel.com/sandbox"><img alt="Vercel Sandbox 2.0.0-beta.11" src="https://img.shields.io/badge/Vercel%20Sandbox-2.0.0--beta.11-000000?style=flat-square&logo=vercel&logoColor=white" /></a>
+</p>
+
 ## What This Is
 
 `vercel-claw` is a personal Vercel-native agent control plane.
 
-There is no public download yet. The app combines a Vercel-hosted control plane, Convex-backed runtime state, and real tool execution inside persistent per-instance Vercel sandboxes.
+There is no public download yet.
+
+The app is meant to be the place where a personal agent actually gets operated:
+- the web app is the control plane for threads, runs, settings, and instance behavior
+- Convex holds the durable backend state for deployments, instances, messages, artifacts, and run history
+- persistent per-instance Vercel sandboxes execute the tools, shell work, and browser work
+
+That means the app is not just a chat frontend. It is the system that decides what an instance can access, which tools are enabled, which context is synced into runtime state, and where execution happens.
 
 ## Road To `0.0.0`
 
@@ -65,6 +84,15 @@ The basic idea is:
 
 So `tools/` is not just docs. It is the checked-in contract and implementation surface for shipped tools.
 
+`tools/tool-registry.json` is the registry manifest for those tools. Each entry points at a versioned tool bundle plus metadata such as docs, capabilities, env requirements, install commands, and runtime behavior.
+
+That registry model is also the path for downloadable tools:
+- the CLI can load a tool registry from a URL or file
+- `vercel-claw tools install <id>` downloads the bundle, verifies it, caches it locally, and marks it installed for the deployment
+- `vercel-claw tool activate <id> --instance <id>` exposes that installed tool to one instance
+
+That means community-made tools do not have to live in this repo forever. As long as they ship a compatible registry entry and bundle, they can be distributed through a registry and installed through the same CLI flow.
+
 ## How Deployment Editing Works
 
 The deployment is repo-owned first, then synced into Convex.
@@ -80,7 +108,7 @@ The main CLI flow is:
 - `vercel-claw tool deactivate <id> --instance <id>`: removes a tool from one instance
 - `vercel-claw sync`: pushes the repo-owned deployment and instance state into Convex
 
-In short: the CLI helps write and manage deployment config, but `deployments/` remains the human-editable source of truth.
+In short: the CLI edits and installs against the same deployment model, and `deployments/` remains the human-editable source of truth before that state is synced into Convex.
 
 ## Why Convex
 
