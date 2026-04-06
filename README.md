@@ -2,37 +2,33 @@
   <img src="./public/logo.webp" alt="vercel-claw" width="720" />
 </p>
 
-<h1 align="center">vercel-claw</h1>
+# vercel-claw
 
-<p align="center">
-  Personal Vercel operator with a Bun CLI, a Next.js app, and Convex as the source of truth.
-</p>
+Personal Vercel operator built as a Bun workspace with a Next.js app, a Bun CLI, and Convex-backed deployment state.
 
 <p align="center">
   <img alt="Bun 1.3.11" src="https://img.shields.io/badge/Bun-1.3.11-000000?style=flat-square&logo=bun&logoColor=white" />
-  <img alt="TypeScript 5.8.3" src="https://img.shields.io/badge/TypeScript-5.8.3-3178C6?style=flat-square&logo=typescript&logoColor=white" />
-  <img alt="Next.js 15.5.2" src="https://img.shields.io/badge/Next.js-15.5.2-000000?style=flat-square&logo=next.js&logoColor=white" />
-  <img alt="React 19.1.1" src="https://img.shields.io/badge/React-19.1.1-149ECA?style=flat-square&logo=react&logoColor=white" />
-  <img alt="@vercel-claw/core workspace:*" src="https://img.shields.io/badge/%40vercel--claw%2Fcore-workspace%3A*-111827?style=flat-square&logo=github&logoColor=white" />
-  <img alt="React DOM 19.1.1" src="https://img.shields.io/badge/React%20DOM-19.1.1-087EA4?style=flat-square&logo=react&logoColor=white" />
-  <img alt="Convex 1.26.2" src="https://img.shields.io/badge/Convex-1.26.2-F15A29?style=flat-square&logo=convex&logoColor=white" />
+  <img alt="TypeScript 6.0.2" src="https://img.shields.io/badge/TypeScript-6.0.2-3178C6?style=flat-square&logo=typescript&logoColor=white" />
+  <img alt="Next.js 15.5.14" src="https://img.shields.io/badge/Next.js-15.5.14-000000?style=flat-square&logo=next.js&logoColor=white" />
+  <img alt="React 19.2.4" src="https://img.shields.io/badge/React-19.2.4-149ECA?style=flat-square&logo=react&logoColor=white" />
+  <img alt="Convex 1.34.1" src="https://img.shields.io/badge/Convex-1.34.1-F15A29?style=flat-square&logo=convex&logoColor=white" />
+  <img alt="AI SDK 7.0.0-beta.64" src="https://img.shields.io/badge/AI%20SDK-7.0.0--beta.64-111111?style=flat-square&logo=vercel&logoColor=white" />
 </p>
 
-<p align="center">
-  <img alt="AI SDK beta" src="https://img.shields.io/badge/AI%20SDK-beta-111111?style=flat-square&logo=vercel&logoColor=white" />
-  <img alt="AI SDK OpenAI beta" src="https://img.shields.io/badge/AI%20SDK%20OpenAI-beta-412991?style=flat-square&logo=openai&logoColor=white" />
-  <img alt="AI SDK React beta" src="https://img.shields.io/badge/AI%20SDK%20React-beta-0F172A?style=flat-square&logo=react&logoColor=white" />
-  <img alt="@types/bun 1.3.11" src="https://img.shields.io/badge/%40types%2Fbun-1.3.11-2B2B2B?style=flat-square&logo=bun&logoColor=white" />
-  <img alt="@types/node 24.3.1" src="https://img.shields.io/badge/%40types%2Fnode-24.3.1-5FA04E?style=flat-square&logo=nodedotjs&logoColor=white" />
-  <img alt="@types/react 19.1.12" src="https://img.shields.io/badge/%40types%2Freact-19.1.12-1E88E5?style=flat-square&logo=react&logoColor=white" />
-  <img alt="@types/react-dom 19.1.9" src="https://img.shields.io/badge/%40types%2Freact--dom-19.1.9-1565C0?style=flat-square&logo=react&logoColor=white" />
-</p>
+## Stack
 
-This repo is a small Bun workspace monorepo:
+- Bun workspace
+- TypeScript
+- Next.js app
+- React UI
+- Convex backend/state
+- Vercel AI SDK
+
+This repo is a Bun workspace monorepo:
 
 - `apps/vercel-claw`: the deployable Next.js app for personal Vercel installs
 - `apps/agent-studio/cli`: the bootstrap and operator CLI for setup, local dev, and deploy flows
-- `apps/agent-studio/core`: studio-owned config, env templates, and core constants
+- `apps/agent-studio/core`: shared config, manifests, and core constants
 
 Convex is treated as the source of truth for agent state, run history, artifacts, and deployment metadata. The app is the UI surface deployed to Vercel and the control plane for tool execution. Enabled CLI, shell, MCP, and browser tools execute inside persistent per-instance Vercel sandboxes. The CLI is the local bootstrap, sync, dev, and deploy surface a user installs or runs with Bun.
 
@@ -86,7 +82,7 @@ The human-editable control plane now lives under `deployments/`.
 - `deployments/instances/000` contains per-instance overrides for the first instance
 - `deployments/instances/000/tools.json` is the central source of truth for which tools the model sees in that instance
 - `deployments/instances/000/context.json` is the repo-owned per-instance context override
-- shipped tool source code lives in `packages/tools/`
+- shipped tool source code lives in `tools/`
 - the CLI controls deployment-level tool availability and instances only decide which deployed tools to expose
 - `bun run cli -- sync` resolves shared + instance tool/context state and pushes it into Convex
 - the deployed app resumes one persistent sandbox per instance and gives each thread its own working directory inside that sandbox

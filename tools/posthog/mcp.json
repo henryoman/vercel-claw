@@ -1,0 +1,8 @@
+{
+  "id": "posthog",
+  "label": "PostHog",
+  "kind": "mcp",
+  "serverName": "posthog",
+  "serverIdentifier": "plugin-posthog-posthog",
+  "description": "PostHog MCP access for analytics, dashboards, feature flags, experiments, logs, and docs."
+}

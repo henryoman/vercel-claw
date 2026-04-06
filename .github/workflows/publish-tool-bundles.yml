@@ -32,7 +32,7 @@ jobs:
       - name: Build tool bundles and registry
         run: >
           bun run build:tools --
-          --registry-path tool-registry.json
+          --registry-path tools/tool-registry.json
           --asset-base-url https://github.com/${{ github.repository }}/releases/download/tool-bundles
 
       - name: Publish release assets
@@ -42,5 +42,5 @@ jobs:
           name: Tool Bundles
           files: |
             .dist/tool-bundles/*.zip
-            tool-registry.json
+            tools/tool-registry.json
           overwrite_files: true

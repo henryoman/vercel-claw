@@ -175,7 +175,7 @@ async function executeManifestTool(
     await finishSandboxRun({
       runId: run.id,
       status,
-      commandId: result.commandId,
+      commandId: result.commandId ?? undefined,
       exitCode: result.exitCode ?? undefined,
       stdoutArtifactId: stdoutArtifactId ?? undefined,
       stderrArtifactId: stderrArtifactId ?? undefined,

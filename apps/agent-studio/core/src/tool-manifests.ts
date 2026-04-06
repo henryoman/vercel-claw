@@ -3,6 +3,8 @@ import { agentBrowserInstallSpec } from "../../../../tools/agent-browser/install
 import type { ShippedToolInstallSpec } from "../../../../tools/manifest-types";
 import { notionTool } from "../../../../tools/notion/activate";
 import { notionInstallSpec } from "../../../../tools/notion/install";
+import { posthogTool } from "../../../../tools/posthog/activate";
+import { posthogInstallSpec } from "../../../../tools/posthog/install";
 import { weatherTool } from "../../../../tools/weather/activate";
 import { weatherInstallSpec } from "../../../../tools/weather/install";
 import type { ToolSourceManifest } from "./tool-registry";
@@ -36,6 +38,7 @@ function createToolManifest(
 export const toolCatalog: ToolSourceManifest[] = [
   createToolManifest(notionInstallSpec, notionTool),
   createToolManifest(agentBrowserInstallSpec, agentBrowserTool),
+  createToolManifest(posthogInstallSpec, posthogTool),
   createToolManifest(weatherInstallSpec, weatherTool),
 ];
 

@@ -15,7 +15,7 @@ import { zipSync } from "fflate";
 const workspaceRoot = resolve(import.meta.dir, "../../../..");
 const args = parseArgs(Bun.argv.slice(2));
 const outputDir = resolve(workspaceRoot, args.outputDir ?? ".dist/tool-bundles");
-const registryPath = resolve(workspaceRoot, args.registryPath ?? "tool-registry.json");
+const registryPath = resolve(workspaceRoot, args.registryPath ?? "tools/tool-registry.json");
 const sourceRepo = args.sourceRepo ?? "https://github.com/henryoman/vercel-claw";
 const assetBaseUrl = args.assetBaseUrl ?? pathToFileURL(outputDir).toString();
 
