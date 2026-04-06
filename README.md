@@ -9,10 +9,10 @@ Personal Vercel operator built as a Bun workspace with a Next.js app, a Bun CLI,
 <p align="center">
   <img alt="Bun 1.3.11" src="https://img.shields.io/badge/Bun-1.3.11-000000?style=flat-square&logo=bun&logoColor=white" />
   <img alt="TypeScript 6.0.2" src="https://img.shields.io/badge/TypeScript-6.0.2-3178C6?style=flat-square&logo=typescript&logoColor=white" />
-  <img alt="Next.js 15.5.14" src="https://img.shields.io/badge/Next.js-15.5.14-000000?style=flat-square&logo=next.js&logoColor=white" />
+  <img alt="Next.js 16.2.2" src="https://img.shields.io/badge/Next.js-16.2.2-000000?style=flat-square&logo=next.js&logoColor=white" />
   <img alt="React 19.2.4" src="https://img.shields.io/badge/React-19.2.4-149ECA?style=flat-square&logo=react&logoColor=white" />
   <img alt="Convex 1.34.1" src="https://img.shields.io/badge/Convex-1.34.1-F15A29?style=flat-square&logo=convex&logoColor=white" />
-  <img alt="AI SDK 7.0.0-beta.64" src="https://img.shields.io/badge/AI%20SDK-7.0.0--beta.64-111111?style=flat-square&logo=vercel&logoColor=white" />
+  <img alt="AI SDK 6.0.146" src="https://img.shields.io/badge/AI%20SDK-6.0.146-111111?style=flat-square&logo=vercel&logoColor=white" />
 </p>
 
 ## Stack

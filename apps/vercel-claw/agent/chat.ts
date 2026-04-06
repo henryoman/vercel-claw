@@ -5,7 +5,7 @@ import { DEFAULT_DEPLOYMENT_ID } from "@vercel-claw/core";
 import {
   convertToModelMessages,
   generateText,
-  isStepCount,
+  stepCountIs,
   streamText,
   type UIMessage,
 } from "ai";
@@ -54,7 +54,7 @@ export async function streamChatResponse(payload: ChatSendRequest): Promise<Resp
       system: context.systemPrompt,
       messages: context.modelMessages,
       tools: context.tools,
-      stopWhen: isStepCount(8),
+      stopWhen: stepCountIs(8),
     });
 
     return result.toUIMessageStreamResponse({
@@ -108,7 +108,7 @@ export async function generateThreadReply(threadId: string, surface: Surface) {
       system: context.systemPrompt,
       messages: context.modelMessages,
       tools: context.tools,
-      stopWhen: isStepCount(8),
+      stopWhen: stepCountIs(8),
     });
 
     const assistantMessage = await appendMessage({

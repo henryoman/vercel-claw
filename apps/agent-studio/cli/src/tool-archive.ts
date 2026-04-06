@@ -51,7 +51,9 @@ async function readAsset(url: string) {
 }
 
 async function sha256Hex(bytes: Uint8Array) {
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  const digestInput = new Uint8Array(bytes.length);
+  digestInput.set(bytes);
+  const digest = await crypto.subtle.digest("SHA-256", digestInput);
   return Array.from(new Uint8Array(digest))
     .map((byte) => byte.toString(16).padStart(2, "0"))
     .join("");

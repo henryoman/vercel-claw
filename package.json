@@ -19,7 +19,7 @@
     "typecheck": "bun run check",
     "test": "bun test",
     "ci": "bun run convex:once && bun run lint && bun run typecheck && bun run test && bun run build && bun run build:tools",
-    "update-all": "bun update --latest && bun update --latest --recursive"
+    "update-all": "bun run ./scripts/update-all.ts"
   },
   "devDependencies": {
     "oxlint": "^1.58.0",

@@ -28,6 +28,6 @@
   },
   "private": true,
   "peerDependencies": {
-    "typescript": "^5"
+    "typescript": "^6.0.2"
   }
 }

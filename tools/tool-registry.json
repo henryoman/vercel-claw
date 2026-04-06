@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-04-06T04:16:57.702Z",
+  "generatedAt": "2026-04-06T05:13:24.042Z",
   "sourceRepo": "https://github.com/henryoman/vercel-claw",
   "tools": [
     {
@@ -11,12 +11,13 @@
       "kind": "mcp",
       "runtime": "mcp",
       "activationScope": "instance",
-      "docsFile": "mcp-docs.md",
+      "memberToolIds": [],
+      "docsFile": "knowledge/mcp-docs.md",
       "mcpServerName": "notion",
       "defaultReadTargets": [
-        "tools/notion/README.md",
-        "tools/notion/mcp.json",
-        "tools/notion/mcp-docs.md"
+        "packages/tools/notion/README.md",
+        "packages/tools/notion/mcp.json",
+        "packages/tools/notion/knowledge/mcp-docs.md"
       ],
       "capabilities": [
         "Hosted MCP server metadata",
@@ -50,7 +51,7 @@
       "verifyCommands": [],
       "bundle": {
         "url": "file:///Volumes/T9/cursor/vercel-claw/.dist/tool-bundles/notion-0.1.0.zip",
-        "sha256": "7462eddb83af1ac1c7f85b69e5cbfb9afdcd583ad31a13eccdc5ce48eff5760e",
+        "sha256": "62c29500067a5628ce3e9c3ab9bc375b05fb7302c021851242ccaa26f1fd2c79",
         "format": "zip",
         "sizeBytes": 3354
       },
@@ -70,11 +71,12 @@
       "kind": "hybrid",
       "runtime": "app",
       "activationScope": "instance",
+      "memberToolIds": [],
       "docsFile": "knowledge/about.md",
       "defaultReadTargets": [
-        "tools/agent-browser/mcp.json",
-        "tools/agent-browser/knowledge/about.md",
-        "tools/agent-browser/knowledge/README.md"
+        "packages/tools/agent-browser/README.md",
+        "packages/tools/agent-browser/mcp.json",
+        "packages/tools/agent-browser/knowledge/about.md"
       ],
       "capabilities": [
         "Browser automation and page interaction",
@@ -214,7 +216,7 @@
       ],
       "bundle": {
         "url": "file:///Volumes/T9/cursor/vercel-claw/.dist/tool-bundles/agent-browser-0.1.0.zip",
-        "sha256": "429a8c05f8bd883e04bcd812cb06be73bd88353534193ced9bf888d0a092d286",
+        "sha256": "e7d17b8388a76582b19e720b58395a3ea0cdac430f7cbb3f4587a878e5e5d470",
         "format": "zip",
         "sizeBytes": 2929
       },
@@ -227,6 +229,55 @@
       }
     },
     {
+      "id": "posthog",
+      "version": "0.1.0",
+      "label": "PostHog",
+      "description": "PostHog MCP access for analytics, dashboards, feature flags, experiments, logs, and docs.",
+      "kind": "mcp",
+      "runtime": "mcp",
+      "activationScope": "instance",
+      "memberToolIds": [],
+      "docsFile": "knowledge/mcp-docs.md",
+      "mcpServerName": "posthog",
+      "defaultReadTargets": [
+        "tools/posthog/README.md",
+        "tools/posthog/mcp.json",
+        "tools/posthog/knowledge/mcp-docs.md"
+      ],
+      "capabilities": [
+        "Project-scoped PostHog MCP access",
+        "HogQL and saved insight analysis",
+        "Dashboards, feature flags, experiments, logs, and docs search"
+      ],
+      "contextHints": [
+        "Use projects-get before changing project scope or assuming which project is active.",
+        "Only use switch-project when the user explicitly asks to change away from the default project.",
+        "Prefer query-run for custom analytics questions and docs-search for PostHog product guidance."
+      ],
+      "promptHints": [
+        "Use feature-specific PostHog tools when they exist; fall back to query-run for custom analysis.",
+        "If the exact PostHog MCP tool name is unclear, inspect the tool catalog before invoking a broad workflow."
+      ],
+      "requiredEnvVars": [],
+      "optionalEnvVars": [],
+      "dependencies": [],
+      "installCommands": [],
+      "verifyCommands": [],
+      "bundle": {
+        "url": "file:///Volumes/T9/cursor/vercel-claw/.dist/tool-bundles/posthog-0.1.0.zip",
+        "sha256": "7c839922aafb4fedfb70d81a3fc20157b0af757965f2ebfea238b3691c88a840",
+        "format": "zip",
+        "sizeBytes": 3359
+      },
+      "metadata": {
+        "rootDirectory": "posthog",
+        "mcpConfigPath": "posthog/mcp.json",
+        "knowledgeDirectory": "posthog/knowledge",
+        "skillsDirectory": null,
+        "readmePath": "posthog/README.md"
+      }
+    },
+    {
       "id": "weather",
       "version": "0.1.0",
       "label": "Weather",
@@ -234,6 +285,7 @@
       "kind": "cli",
       "runtime": "app",
       "activationScope": "instance",
+      "memberToolIds": [],
       "docsFile": "README.md",
       "defaultReadTargets": [
         "tools/weather/README.md",
@@ -282,7 +334,7 @@
       "verifyCommands": [],
       "bundle": {
         "url": "file:///Volumes/T9/cursor/vercel-claw/.dist/tool-bundles/weather-0.1.0.zip",
-        "sha256": "09af21bd71e03dca77a2ee3b802d9b3701d3617f1c867bcbd5876de20008435d",
+        "sha256": "2ad52212224b1349445dc2b2a38920c660256b8d9648cce0b0de245ee737a999",
         "format": "zip",
         "sizeBytes": 13964
       },
@@ -292,97 +344,6 @@
         "knowledgeDirectory": null,
         "skillsDirectory": null,
         "readmePath": "weather/README.md"
-      }
-    },
-    {
-      "id": "everyday-bundle",
-      "version": "0.1.0",
-      "label": "Everyday Bundle",
-      "description": "Bundle of day-to-day tools for notes and quick utility lookups.",
-      "kind": "package",
-      "runtime": "metadata",
-      "activationScope": "shared",
-      "memberToolIds": [
-        "notion",
-        "weather"
-      ],
-      "docsFile": null,
-      "defaultReadTargets": [],
-      "capabilities": [
-        "Installs a curated everyday tool bundle",
-        "Enables Notion and Weather together",
-        "Provides install-time grouping metadata"
-      ],
-      "contextHints": [
-        "This is a bundle entry for installation and organization, not a directly runnable tool.",
-        "Use the member tool ids when you need tool-specific docs or runtime behavior."
-      ],
-      "promptHints": [
-        "Expand to the member tools before making runtime assumptions.",
-        "Do not expose the bundle id as an instance tool."
-      ],
-      "requiredEnvVars": [],
-      "optionalEnvVars": [],
-      "dependencies": [],
-      "installCommands": [],
-      "verifyCommands": [],
-      "bundle": {
-        "url": "file:///Volumes/T9/cursor/vercel-claw/.dist/tool-bundles/everyday-bundle-0.1.0.zip",
-        "sha256": "e4e5184f1db42e88eedeec48a783954fa5d781862ed0ccd58afb71aa3898627f",
-        "format": "zip",
-        "sizeBytes": 554
-      },
-      "metadata": {
-        "rootDirectory": "everyday-bundle",
-        "mcpConfigPath": null,
-        "knowledgeDirectory": null,
-        "skillsDirectory": null,
-        "readmePath": "everyday-bundle/README.md"
-      }
-    },
-    {
-      "id": "dev-tools-bundle",
-      "version": "0.1.0",
-      "label": "Dev Tools Bundle",
-      "description": "Bundle of development-focused tools for browser-driven debugging and inspection.",
-      "kind": "package",
-      "runtime": "metadata",
-      "activationScope": "shared",
-      "memberToolIds": [
-        "agent-browser"
-      ],
-      "docsFile": null,
-      "defaultReadTargets": [],
-      "capabilities": [
-        "Installs a curated development tool bundle",
-        "Enables browser debugging and inspection workflows",
-        "Provides install-time grouping metadata"
-      ],
-      "contextHints": [
-        "This is a bundle entry for installation and organization, not a directly runnable tool.",
-        "Use the member tool ids when you need tool-specific docs or runtime behavior."
-      ],
-      "promptHints": [
-        "Expand to the member tools before making runtime assumptions.",
-        "Do not expose the bundle id as an instance tool."
-      ],
-      "requiredEnvVars": [],
-      "optionalEnvVars": [],
-      "dependencies": [],
-      "installCommands": [],
-      "verifyCommands": [],
-      "bundle": {
-        "url": "file:///Volumes/T9/cursor/vercel-claw/.dist/tool-bundles/dev-tools-bundle-0.1.0.zip",
-        "sha256": "5b76d92af56c0fe11ce1d54fff140a8d2303edda93e0240384bb05b6f5c987ab",
-        "format": "zip",
-        "sizeBytes": 569
-      },
-      "metadata": {
-        "rootDirectory": "dev-tools-bundle",
-        "mcpConfigPath": null,
-        "knowledgeDirectory": null,
-        "skillsDirectory": null,
-        "readmePath": "dev-tools-bundle/README.md"
       }
     }
   ]
