@@ -1,0 +1,15 @@
+{
+  "defaultModel": "gpt-5",
+  "promptFiles": [],
+  "toolsetFile": "toolsets/default.json",
+  "integrations": [],
+  "execution": {
+    "mode": "sandbox",
+    "sandbox": {
+      "enabled": true,
+      "timeoutMs": 300000,
+      "snapshotExpirationMs": 604800000,
+      "vcpus": null
+    }
+  }
+}

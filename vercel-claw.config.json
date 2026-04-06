@@ -3,7 +3,6 @@
   "appDir": "apps/vercel-claw",
   "convexDir": "apps/vercel-claw/convex",
   "deploymentsDir": "deployments",
-  "defaultDeploymentId": "default",
   "defaultModel": "gpt-5",
   "requiredEnvVars": [
     "OPENAI_API_KEY",

@@ -1,0 +1,7 @@
+{
+  "id": "default",
+  "label": "Deployment",
+  "sharedDefaultsFile": "shared/defaults.json",
+  "nextInstanceNumber": 1,
+  "instanceIdPadding": 3
+}

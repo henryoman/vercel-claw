@@ -8,7 +8,7 @@ describe("buildSystemPrompt", () => {
       context: {
         instructions: ["Stay concise"],
         notes: ["Prefer verified facts"],
-        knowledgeFiles: ["deployments/default/prompts/system.md"],
+        knowledgeFiles: ["deployments/shared/context.json"],
       },
     });
 
@@ -19,7 +19,7 @@ describe("buildSystemPrompt", () => {
     expect(prompt).toContain("Instance instructions:\n- Stay concise");
     expect(prompt).toContain("Instance notes:\n- Prefer verified facts");
     expect(prompt).toContain(
-      "Knowledge files configured for this instance:\n- deployments/default/prompts/system.md",
+      "Knowledge files configured for this instance:\n- deployments/shared/context.json",
     );
   });
 

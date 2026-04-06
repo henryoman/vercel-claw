@@ -6,9 +6,9 @@ on:
     branches:
       - main
     paths:
-      - "apps/cli/scripts/build-tool-registry.ts"
-      - "packages/core/src/tool-manifests.ts"
-      - "packages/core/src/tool-registry.ts"
+      - "apps/agent-studio/cli/scripts/build-tool-registry.ts"
+      - "apps/agent-studio/core/src/tool-manifests.ts"
+      - "apps/agent-studio/core/src/tool-registry.ts"
       - "packages/tools/**"
 
 jobs:

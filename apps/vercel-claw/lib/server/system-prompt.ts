@@ -19,7 +19,7 @@ const TOOL_WORKFLOW_SECTION = [
   "- Use `read` with `{ \"target\": \"...\" }` for one file or `{ \"targets\": [\"...\", \"...\"] }` to inspect several files before answering.",
   "- Example: `{ \"target\": \"notion\" }` opens a shipped tool's default docs.",
   "- Example: `{ \"target\": \"notion/knowledge/mcp-docs.md\" }` opens a specific file inside a shipped tool.",
-  "- Example: `{ \"targets\": [\"deployments/default/shared/context.json\", \"packages/tools/notion/mcp.json\"] }` reads several files in one call.",
+  "- Example: `{ \"targets\": [\"deployments/shared/context.json\", \"packages/tools/notion/mcp.json\"] }` reads several files in one call.",
   "- If tool behavior is uncertain, inspect files first and then answer from the retrieved context.",
 ].join("\n");
 

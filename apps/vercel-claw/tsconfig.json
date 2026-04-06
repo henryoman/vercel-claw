@@ -32,7 +32,7 @@
     "agent/**/*.ts",
     "components/**/*.ts",
     "components/**/*.tsx",
-    "connectors/**/*.ts",
+    "lib/connectors/**/*.ts",
     "convex/**/*.ts",
     "lib/**/*.ts",
     "lib/**/*.tsx",

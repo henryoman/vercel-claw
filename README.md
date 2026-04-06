@@ -31,8 +31,8 @@
 This repo is a small Bun workspace monorepo:
 
 - `apps/vercel-claw`: the deployable Next.js app for personal Vercel installs
-- `apps/cli`: the bootstrap and operator CLI for setup, local dev, and deploy flows
-- `packages/core`: shared config, env templates, and constants used by both
+- `apps/agent-studio/cli`: the bootstrap and operator CLI for setup, local dev, and deploy flows
+- `apps/agent-studio/core`: studio-owned config, env templates, and core constants
 
 Convex is treated as the source of truth for agent state, run history, artifacts, and deployment metadata. The app is the UI surface deployed to Vercel and the control plane for tool execution. Enabled CLI, shell, MCP, and browser tools execute inside persistent per-instance Vercel sandboxes. The CLI is the local bootstrap, sync, dev, and deploy surface a user installs or runs with Bun.
 
@@ -79,12 +79,13 @@ The selected CLIs and toolkits are saved in `vercel-claw.config.json`, and `doct
 
 The human-editable control plane now lives under `deployments/`.
 
-- `deployments/default/shared` contains deployment-wide defaults shared by every instance
-- `deployments/default/installed-tools.json` is the deployment-level source of truth for which tools/plugins are enabled for the deployed sandbox runtime
-- `deployments/default/shared/context.json` is the repo-owned shared context file
-- `deployments/default/instances/000` contains per-instance overrides for the first instance
-- `deployments/default/instances/000/tools.json` is the central source of truth for which tools the model sees in that instance
-- `deployments/default/instances/000/context.json` is the repo-owned per-instance context override
+- `deployments/deployment.json` holds deployment metadata
+- `deployments/shared` contains deployment-wide defaults shared by every instance
+- `deployments/installed-tools.json` is the deployment-level source of truth for which tools/plugins are enabled for the deployed sandbox runtime
+- `deployments/shared/context.json` is the repo-owned shared context file
+- `deployments/instances/000` contains per-instance overrides for the first instance
+- `deployments/instances/000/tools.json` is the central source of truth for which tools the model sees in that instance
+- `deployments/instances/000/context.json` is the repo-owned per-instance context override
 - shipped tool source code lives in `packages/tools/`
 - the CLI controls deployment-level tool availability and instances only decide which deployed tools to expose
 - `bun run cli -- sync` resolves shared + instance tool/context state and pushes it into Convex
@@ -98,8 +99,8 @@ Each instance can declare gate settings in `instance.json`, and the CLI syncs th
 1. Run `bun run cli -- init` to select CLIs and toolkits, then generate config and env scaffolding.
 2. Run `bun run cli -- doctor` to see missing binaries and missing env keys.
 3. Add `OPENAI_API_KEY`, `NEXT_PUBLIC_CONVEX_URL`, `CONVEX_DEPLOYMENT`, and any selected toolkit keys in `apps/vercel-claw/.env.local`.
-4. Edit `deployments/default/shared` for deployment-wide prompts, context, defaults, and toolsets.
-5. Edit `deployments/default/instances/000` for per-instance tools and context overrides.
+4. Edit `deployments/shared` for deployment-wide context, defaults, and toolsets.
+5. Edit `deployments/instances/000` for per-instance tools and context overrides.
 6. Run `bun run cli -- sync` after the Convex deployment is available.
 7. Run `bun run cli -- dev` for local Next.js + Convex development.
 8. Run `bun run cli -- deploy --prod` to deploy Convex, sync runtime config, then deploy the Vercel app.

@@ -13,7 +13,7 @@ import { existsSync } from "node:fs";
 import { readFile, readdir, stat } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { z } from "zod";
-import { buildToolContextIndex } from "../context-utils/tool-context";
+import { buildToolContextIndex } from "../../agent/context-utils/tool-context";
 import {
   batchReadResultSchema,
   directoryReadResultSchema,
@@ -205,7 +205,7 @@ function buildReadDescription(exposedToolIds: string[], knowledgeFiles: string[]
     "Pass { target } for one file or { targets: [...] } to read several files or directories in one call.",
     "Use target='notion' to open a shipped tool's default docs.",
     "Use target='notion/knowledge/mcp-docs.md' for files inside a shipped tool folder.",
-    "Use target='deployments/default/shared/context.json' for a repo-relative file or directory listing.",
+    "Use target='deployments/shared/context.json' for a repo-relative file or directory listing.",
     "Use startLine and endLine for a specific range.",
   ];
 

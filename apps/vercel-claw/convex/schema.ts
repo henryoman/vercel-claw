@@ -141,6 +141,13 @@ export default defineSchema({
     .index("by_instance", ["instanceId"])
     .index("by_deployment_and_instance", ["deploymentId", "instanceId"]),
 
+  instanceProfile: defineTable({
+    instanceId: v.string(),
+    profile: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_instance", ["instanceId"]),
+
   sandboxRuns: defineTable({
     threadId: v.id("threads"),
     instanceId: v.string(),
