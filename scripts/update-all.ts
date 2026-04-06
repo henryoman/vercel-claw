@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
+/// <reference types="bun" />
 
-import { fileURLToPath } from "node:url";
-import { dirname, join, relative, resolve } from "node:path";
+export {};
 
 type DependencySection =
   | "dependencies"
@@ -45,22 +45,25 @@ const skippedProtocols = [
   "catalog:",
 ];
 
-const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const repoRootUrl = new URL("../", import.meta.url);
+const repoRoot = toPath(repoRootUrl);
 const dryRun = Bun.argv.includes("--dry-run");
 
 async function main() {
-  const rootManifestPath = join(repoRoot, "package.json");
-  const rootManifest = await readPackageJson(rootManifestPath);
-  const manifestPaths = await collectManifestPaths(rootManifest);
+  const manifestPaths = await collectManifestPaths();
   const versionCache = new Map<string, Promise<string>>();
 
   let changedFiles = 0;
   let changedDependencies = 0;
 
+  console.log(`${dryRun ? "[dry-run] " : ""}Checking ${manifestPaths.length} package.json files...`);
+
   for (const manifestPath of manifestPaths) {
     const manifest = await readPackageJson(manifestPath);
-    const packageLabel = manifest.name ?? relative(repoRoot, manifestPath) ?? "root";
+    const packageLabel = manifest.name ?? relativeToRepo(manifestPath);
     let fileChanged = false;
+
+    console.log(`${dryRun ? "[dry-run] " : ""}Inspecting ${packageLabel}`);
 
     for (const section of dependencySections) {
       const deps = manifest[section];
@@ -106,13 +109,13 @@ async function main() {
     console.log(
       changedFiles > 0
         ? `[dry-run] Would update ${changedDependencies} dependencies across ${changedFiles} package.json files.`
-        : "[dry-run] No dependency range changes found.",
+        : `[dry-run] No dependency range changes found after checking ${manifestPaths.length} package.json files.`,
     );
     return;
   }
 
   if (changedFiles === 0) {
-    console.log("No dependency range changes found.");
+    console.log(`No dependency range changes found after checking ${manifestPaths.length} package.json files.`);
     return;
   }
 
@@ -130,24 +133,21 @@ async function main() {
   }
 }
 
-async function collectManifestPaths(rootManifest: PackageJson) {
-  const manifestPaths = new Set<string>([join(repoRoot, "package.json")]);
-  const workspacePatterns = Array.isArray(rootManifest.workspaces)
-    ? rootManifest.workspaces
-    : rootManifest.workspaces?.packages ?? [];
+async function collectManifestPaths() {
+  const manifestPaths = new Set<string>();
+  const glob = new Bun.Glob("**/package.json");
 
-  for (const pattern of workspacePatterns) {
-    const packageJsonPattern = pattern.endsWith("package.json") ? pattern : `${pattern}/package.json`;
-    const glob = new Bun.Glob(packageJsonPattern);
-
-    for await (const match of glob.scan({
-      cwd: repoRoot,
-      absolute: false,
-      dot: false,
-      onlyFiles: true,
-    })) {
-      manifestPaths.add(join(repoRoot, match));
+  for await (const match of glob.scan({
+    cwd: repoRoot,
+    absolute: false,
+    dot: true,
+    onlyFiles: true,
+  })) {
+    if (shouldIgnoreManifest(match)) {
+      continue;
     }
+
+    manifestPaths.add(resolveFromRepo(match));
   }
 
   return [...manifestPaths].sort();
@@ -155,6 +155,32 @@ async function collectManifestPaths(rootManifest: PackageJson) {
 
 async function readPackageJson(path: string): Promise<PackageJson> {
   return (await Bun.file(path).json()) as PackageJson;
+}
+
+function resolveFromRepo(relativePath: string) {
+  return toPath(new URL(relativePath, repoRootUrl));
+}
+
+function relativeToRepo(path: string) {
+  return path.startsWith(`${repoRoot}/`) ? path.slice(repoRoot.length + 1) : path;
+}
+
+function toPath(url: URL) {
+  const pathname = decodeURIComponent(url.pathname);
+  return pathname.endsWith("/") ? pathname.slice(0, -1) : pathname;
+}
+
+function shouldIgnoreManifest(relativePath: string) {
+  const pathParts = relativePath.split("/");
+  return pathParts.some((part) =>
+    part === "node_modules" ||
+    part === ".git" ||
+    part === ".next" ||
+    part === ".turbo" ||
+    part === "dist" ||
+    part === "build" ||
+    part === "coverage",
+  );
 }
 
 function shouldSkipSpec(spec: string) {

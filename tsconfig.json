@@ -1,4 +1,14 @@
 {
   "extends": "./tsconfig.base.json",
-  "files": []
+  "compilerOptions": {
+    "lib": [
+      "ES2022"
+    ],
+    "types": [
+      "bun"
+    ]
+  },
+  "include": [
+    "scripts/**/*.ts"
+  ]
 }

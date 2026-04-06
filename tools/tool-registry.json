@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-04-06T05:13:24.042Z",
+  "generatedAt": "2026-04-06T05:22:34.550Z",
   "sourceRepo": "https://github.com/henryoman/vercel-claw",
   "tools": [
     {
@@ -51,7 +51,7 @@
       "verifyCommands": [],
       "bundle": {
         "url": "file:///Volumes/T9/cursor/vercel-claw/.dist/tool-bundles/notion-0.1.0.zip",
-        "sha256": "62c29500067a5628ce3e9c3ab9bc375b05fb7302c021851242ccaa26f1fd2c79",
+        "sha256": "0a7702b918eef219d11c1582da5bd90d410d005fc97b30a3acb61b3ab519a236",
         "format": "zip",
         "sizeBytes": 3354
       },
@@ -216,7 +216,7 @@
       ],
       "bundle": {
         "url": "file:///Volumes/T9/cursor/vercel-claw/.dist/tool-bundles/agent-browser-0.1.0.zip",
-        "sha256": "e7d17b8388a76582b19e720b58395a3ea0cdac430f7cbb3f4587a878e5e5d470",
+        "sha256": "ee7cc4726a1b60ebdd6cbb6d803d3c83bd1df87262482e1cf45bb2697789a0ca",
         "format": "zip",
         "sizeBytes": 2929
       },
@@ -265,7 +265,7 @@
       "verifyCommands": [],
       "bundle": {
         "url": "file:///Volumes/T9/cursor/vercel-claw/.dist/tool-bundles/posthog-0.1.0.zip",
-        "sha256": "7c839922aafb4fedfb70d81a3fc20157b0af757965f2ebfea238b3691c88a840",
+        "sha256": "72826803e97459c600c5e0694f6d36c9097d88523df00596916c5f7e43d06b7d",
         "format": "zip",
         "sizeBytes": 3359
       },
@@ -334,7 +334,7 @@
       "verifyCommands": [],
       "bundle": {
         "url": "file:///Volumes/T9/cursor/vercel-claw/.dist/tool-bundles/weather-0.1.0.zip",
-        "sha256": "2ad52212224b1349445dc2b2a38920c660256b8d9648cce0b0de245ee737a999",
+        "sha256": "0a0b87bdee2bb6840c7590a0c3bc9eb366750f2440c92af75400fc7c95db3edd",
         "format": "zip",
         "sizeBytes": 13964
       },
