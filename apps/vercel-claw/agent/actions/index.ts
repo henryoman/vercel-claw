@@ -15,6 +15,7 @@ import {
   toolContextResultSchema,
 } from "../tool-contracts";
 import { createExecutableTools } from "../tool-execution";
+import { createPostHogTools } from "./posthog";
 import {
   createReadFileTool,
   readTextFile,
@@ -133,6 +134,9 @@ export function createAgentTools(options: {
 
   return {
     ...helperTools,
+    ...createPostHogTools({
+      exposedToolIds,
+    }),
     ...executableTools,
   };
 }

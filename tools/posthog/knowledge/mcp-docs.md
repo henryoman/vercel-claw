@@ -1,6 +1,6 @@
 # PostHog MCP Notes
 
-Use the `posthog` MCP server when the user needs live PostHog product data, analytics, release controls, debugging context, or official PostHog docs.
+Use the `posthog` MCP server when the user needs live PostHog product data, analytics, release controls, debugging context, schema context, or official PostHog docs.
 
 ## Scope First
 
@@ -29,7 +29,7 @@ Use these first when the task is exploratory or when the exact PostHog object na
 - `dashboards-get-all`
 - `dashboard-get`
 
-Prefer `query-run` for custom analysis and HogQL. Prefer saved insight or dashboard tools when the user is asking about an existing object.
+Prefer `query-run` for custom analytics. Prefer saved insight or dashboard tools when the user is asking about an existing object.
 
 ### Release And Experimentation
 
@@ -53,6 +53,14 @@ Use these when rollout state, blast radius, experiment health, or linked release
 
 Use attribute discovery before writing narrow log filters if the exact attribute names are unclear.
 
+### Schema
+
+- `read-data-schema`
+- `event-definitions-list`
+- `properties-list`
+
+Use these when the user wants to inspect which events and properties exist before asking narrower analytics questions.
+
 ## Working Style
 
 - PostHog's MCP guidance favors small, composable tools over large multi-step wrappers.
@@ -69,3 +77,4 @@ Use attribute discovery before writing narrow log filters if the exact attribute
 - "Show me saved insights about X" -> `insights-get-all`
 - "Check rollout status for flag Y" -> `feature-flags-status-retrieve`
 - "Investigate logs for service Z" -> `logs-query`
+- "What events or properties do we have?" -> `read-data-schema`

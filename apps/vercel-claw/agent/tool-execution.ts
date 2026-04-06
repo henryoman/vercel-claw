@@ -37,12 +37,12 @@ export function createExecutableTools(options: {
 
   const executableTools = listToolManifests()
     .filter(
-      (manifest) =>
+      (manifest: { id: string; execution: { sandbox: string; }; }) =>
         options.exposedToolIds.includes(manifest.id) &&
         manifest.execution &&
         manifest.execution.sandbox !== "never",
     )
-    .map((manifest) => [toExecutableToolName(manifest.id), createExecutableTool(manifest, options)]);
+    .map((manifest: { id: string; }) => [toExecutableToolName(manifest.id), createExecutableTool(manifest, options)]);
 
   return Object.fromEntries(executableTools);
 }

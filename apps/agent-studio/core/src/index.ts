@@ -224,6 +224,20 @@ export const toolkitCatalog: ToolkitDefinition[] = [
     recommendedCliIds: [],
   },
   {
+    id: "posthog",
+    label: "PostHog",
+    description: "Product analytics, dashboards, flags, experiments, logs, and schema access.",
+    requiredEnvVars: ["POSTHOG_API_KEY", "POSTHOG_PROJECT_ID"],
+    optionalEnvVars: [
+      "POSTHOG_HOST",
+      "POSTHOG_REQUEST_TIMEOUT_MS",
+      "POSTHOG_ENABLE_LOGS",
+      "POSTHOG_ENABLE_FLAGS",
+      "POSTHOG_ENABLE_EXPERIMENTS",
+    ],
+    recommendedCliIds: [],
+  },
+  {
     id: "google-workspace",
     label: "Google Workspace",
     description: "Gmail, Docs, Drive, and Calendar access.",

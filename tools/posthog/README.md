@@ -7,10 +7,11 @@ This folder contains the stable source-of-truth files for the PostHog MCP setup 
 Use this tool when the model needs PostHog access for:
 
 - project and organization discovery
-- custom analytics or HogQL queries
+- custom PostHog analytics queries
 - saved dashboards and insights
 - feature flags and experiments
 - logs, error tracking, and related debugging workflows
+- event and property schema inspection
 - PostHog product and API docs search
 
 ## Recommended Workflow
@@ -18,7 +19,7 @@ Use this tool when the model needs PostHog access for:
 1. Start with `projects-get` if project scope is unclear.
 2. Only use `switch-project` when the user explicitly asks to change the active project.
 3. Prefer `query-run` for custom analytics questions and `docs-search` for PostHog product guidance.
-4. Use feature-specific MCP tools when the task clearly targets dashboards, insights, flags, experiments, or logs.
+4. Use feature-specific MCP tools when the task clearly targets dashboards, insights, flags, experiments, logs, or schema lookup.
 
 ## Files
 

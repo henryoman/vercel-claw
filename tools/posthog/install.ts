@@ -11,7 +11,13 @@ export const posthogInstallSpec: ShippedToolInstallSpec = {
   dependencies: [],
   installCommands: [],
   verifyCommands: [],
-  requiredEnvVars: [],
-  optionalEnvVars: [],
+  requiredEnvVars: ["POSTHOG_API_KEY", "POSTHOG_PROJECT_ID"],
+  optionalEnvVars: [
+    "POSTHOG_HOST",
+    "POSTHOG_REQUEST_TIMEOUT_MS",
+    "POSTHOG_ENABLE_LOGS",
+    "POSTHOG_ENABLE_FLAGS",
+    "POSTHOG_ENABLE_EXPERIMENTS",
+  ],
   cacheSubdir: "posthog",
 };
