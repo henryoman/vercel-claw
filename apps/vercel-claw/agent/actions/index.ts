@@ -15,6 +15,7 @@ import {
   toolContextResultSchema,
 } from "../tool-exec/tool-contracts";
 import { createExecutableTools } from "../tool-exec/tool-execution";
+import { createGoogleWorkspaceTools } from "./google-workspace";
 import { createPostHogTools } from "./posthog";
 import {
   createReadFileTool,
@@ -134,6 +135,9 @@ export function createAgentTools(options: {
 
   return {
     ...helperTools,
+    ...createGoogleWorkspaceTools({
+      exposedToolIds,
+    }),
     ...createPostHogTools({
       exposedToolIds,
     }),

@@ -1,3 +1,3 @@
 import "server-only";
 
-export { createPostHogTools } from "../../../../tools/posthog/ai-tools";
+export { createPostHogTools } from "../../../../tools/add-on/posthog/ai-tools";

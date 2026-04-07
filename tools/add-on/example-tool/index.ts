@@ -1,4 +1,4 @@
-import { defineToolModule, type ShippedToolRuntimeSpec } from "../manifest-types";
+import { defineToolModule, type ShippedToolRuntimeSpec } from "../../manifest-types";
 
 const runtimeSpec: ShippedToolRuntimeSpec = {
   id: "example-tool",
@@ -7,9 +7,9 @@ const runtimeSpec: ShippedToolRuntimeSpec = {
   docsFile: "README.md",
   description: "Reference folder showing the standardized shipped tool module layout.",
   defaultReadTargets: [
-    "tools/example-tool/README.md",
-    "tools/example-tool/basics.md",
-    "tools/example-tool/mcp.json",
+    "tools/add-on/example-tool/README.md",
+    "tools/add-on/example-tool/basics.md",
+    "tools/add-on/example-tool/mcp.json",
   ],
   capabilities: [
     "Minimal example of the tool module contract",

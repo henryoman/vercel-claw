@@ -242,7 +242,7 @@ async function executeWeatherOperation(input: {
   switch (input.operation) {
     case "current": {
       const location = requireStringArgument(input.args, "location");
-      const scriptPath = resolve(process.cwd(), "tools/weather/run.ts");
+      const scriptPath = resolve(process.cwd(), "tools/add-on/weather/run.ts");
       const result = await runHostCommand("bun", [scriptPath, location]);
       const payload = result.exitCode === 0 ? parseJsonObject(result.stdout) : {};
       const resolvedLocation = readNestedString(payload, ["resolvedLocation"]);

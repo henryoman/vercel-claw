@@ -1,4 +1,4 @@
-import { shippedToolModules } from "../../../../tools";
+import { shippedToolModules, toolModuleDirectories } from "../../../../tools";
 import type { ToolModule } from "../../../../tools/manifest-types";
 import type { ToolSourceManifest } from "./tool-registry";
 
@@ -14,7 +14,8 @@ function createToolManifest(toolModule: ToolModule): ToolSourceManifest {
   return {
     ...install,
     ...runtime,
-    shippedToolDir: `tools/${install.id}`,
+    shippedToolDir:
+      toolModuleDirectories[install.id as keyof typeof toolModuleDirectories] ?? `tools/${install.id}`,
   };
 }
 

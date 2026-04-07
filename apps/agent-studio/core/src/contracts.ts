@@ -1,4 +1,4 @@
-export const surfaces = ["web", "telegram"] as const;
+export const surfaces = ["web", "telegram", "slack"] as const;
 export type Surface = (typeof surfaces)[number];
 
 export const threadStatuses = ["idle", "running", "completed", "errored"] as const;
@@ -7,7 +7,7 @@ export type ThreadStatus = (typeof threadStatuses)[number];
 export const messageRoles = ["system", "user", "assistant", "tool"] as const;
 export type MessageRole = (typeof messageRoles)[number];
 
-export const settingScopes = ["global", "web", "telegram"] as const;
+export const settingScopes = ["global", "web", "telegram", "slack"] as const;
 export type SettingScope = (typeof settingScopes)[number];
 
 export const artifactKinds = ["file", "note", "result"] as const;
@@ -165,6 +165,28 @@ export interface TelegramWebhookResponse {
   ok: boolean;
   threadId: string | null;
   reply: string | null;
+}
+
+export interface SlackWebhookRequest {
+  type: "url_verification" | "event_callback";
+  challenge?: string;
+  event_id?: string;
+  event_time?: number;
+  event?: {
+    type: string;
+    text?: string;
+    user?: string;
+    channel?: string;
+    ts?: string;
+    thread_ts?: string;
+    bot_id?: string;
+    subtype?: string;
+  };
+}
+
+export interface SlackWebhookResponse {
+  ok: boolean;
+  threadId: string | null;
 }
 
 export const defaultSettings = [

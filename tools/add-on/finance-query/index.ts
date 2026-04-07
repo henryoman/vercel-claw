@@ -1,4 +1,4 @@
-import { defineToolModule, type ShippedToolRuntimeSpec } from "../manifest-types";
+import { defineToolModule, type ShippedToolRuntimeSpec } from "../../manifest-types";
 
 const runtimeSpec: ShippedToolRuntimeSpec = {
   id: "finance-query",
@@ -7,8 +7,8 @@ const runtimeSpec: ShippedToolRuntimeSpec = {
   docsFile: "README.md",
   description: "Reference docs for the hosted Finance Query API, CLI, and MCP server.",
   defaultReadTargets: [
-    "tools/finance-query/README.md",
-    "tools/finance-query/README (5).md",
+    "tools/add-on/finance-query/README.md",
+    "tools/add-on/finance-query/README (5).md",
   ],
   capabilities: [
     "Hosted financial data API reference",

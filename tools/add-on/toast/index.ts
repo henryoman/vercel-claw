@@ -1,4 +1,4 @@
-import { defineToolModule, type ShippedToolRuntimeSpec } from "../manifest-types";
+import { defineToolModule, type ShippedToolRuntimeSpec } from "../../manifest-types";
 
 const runtimeSpec: ShippedToolRuntimeSpec = {
   id: "toast",
@@ -7,8 +7,8 @@ const runtimeSpec: ShippedToolRuntimeSpec = {
   docsFile: "README.md",
   description: "Reference note for Toast-related tool dependencies.",
   defaultReadTargets: [
-    "tools/toast/README.md",
-    "tools/toast/required-tools.txt",
+    "tools/add-on/toast/README.md",
+    "tools/add-on/toast/required-tools.txt",
   ],
   capabilities: [
     "Placeholder dependency note for Toast workflows",

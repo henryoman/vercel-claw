@@ -1,4 +1,4 @@
-import { defineToolModule, type ShippedToolRuntimeSpec } from "../manifest-types";
+import { defineToolModule, type ShippedToolRuntimeSpec } from "../../manifest-types";
 
 const runtimeSpec: ShippedToolRuntimeSpec = {
   id: "excelize",
@@ -7,9 +7,9 @@ const runtimeSpec: ShippedToolRuntimeSpec = {
   docsFile: "README.md",
   description: "Scratchpad docs for the Excelize Go library and local install notes.",
   defaultReadTargets: [
-    "tools/excelize/README.md",
-    "tools/excelize/install.sh",
-    "tools/excelize/code/createdocument.go",
+    "tools/add-on/excelize/README.md",
+    "tools/add-on/excelize/install.sh",
+    "tools/add-on/excelize/code/createdocument.go",
   ],
   capabilities: [
     "Excelize dependency note",

@@ -241,7 +241,7 @@ async function createThread(
   args: {
     title?: string;
     instanceId: string;
-    surface: "web" | "telegram";
+    surface: "web" | "telegram" | "slack";
     agentSlug?: string;
     externalThreadId?: string;
     externalUserId?: string;

@@ -17,10 +17,11 @@ describe("tool modules", () => {
 
   test("use repo-relative tools paths for shipped read targets", () => {
     for (const manifest of listToolManifests()) {
-      expect(manifest.shippedToolDir).toBe(`tools/${manifest.id}`);
+      expect(manifest.shippedToolDir.endsWith(`/${manifest.id}`)).toBe(true);
+      expect(manifest.shippedToolDir.startsWith("tools/")).toBe(true);
       expect(manifest.defaultReadTargets.length).toBeGreaterThan(0);
       for (const target of manifest.defaultReadTargets) {
-        expect(target.startsWith(`tools/${manifest.id}/`)).toBe(true);
+        expect(target.startsWith(`${manifest.shippedToolDir}/`)).toBe(true);
         expect(target.includes("packages/tools/")).toBe(false);
       }
     }

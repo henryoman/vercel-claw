@@ -11,6 +11,7 @@ export interface ClawConfig {
   optionalEnvVars: string[];
   selectedCliIds: string[];
   selectedToolkitIds: string[];
+  enabledSurfaceIds: string[];
 }
 
 export interface CliDefinition {
@@ -28,6 +29,14 @@ export interface ToolkitDefinition {
   requiredEnvVars: string[];
   optionalEnvVars: string[];
   recommendedCliIds: string[];
+}
+
+export interface SurfaceDefinition {
+  id: string;
+  label: string;
+  description: string;
+  requiredEnvVars: string[];
+  optionalEnvVars: string[];
 }
 
 export const DEFAULT_DEPLOYMENTS_DIR = "deployments";
@@ -145,13 +154,13 @@ export const defaultClawConfig: ClawConfig = {
     "OPENAI_BASE_URL",
     "CLAW_AGENT_MODEL",
     "CLAW_SYSTEM_PROMPT",
-    "TELEGRAM_BOT_TOKEN",
     "VERCEL_TOKEN",
     "VERCEL_TEAM_ID",
     "VERCEL_PROJECT_ID",
   ],
   selectedCliIds: ["bun", "git", "convex", "vercel"],
   selectedToolkitIds: [],
+  enabledSurfaceIds: ["web"],
 };
 
 export const cliCatalog: CliDefinition[] = [
@@ -291,6 +300,30 @@ export const toolkitCatalog: ToolkitDefinition[] = [
   },
 ];
 
+export const surfaceCatalog: SurfaceDefinition[] = [
+  {
+    id: "web",
+    label: "Web",
+    description: "Built-in browser chat surface served by the Next.js app.",
+    requiredEnvVars: [],
+    optionalEnvVars: [],
+  },
+  {
+    id: "telegram",
+    label: "Telegram",
+    description: "Telegram bot webhook connector for inbound and outbound chat.",
+    requiredEnvVars: ["TELEGRAM_BOT_TOKEN"],
+    optionalEnvVars: [],
+  },
+  {
+    id: "slack",
+    label: "Slack",
+    description: "Slack Events API connector for inbound and outbound chat.",
+    requiredEnvVars: ["SLACK_BOT_TOKEN", "SLACK_SIGNING_SECRET"],
+    optionalEnvVars: ["SLACK_APP_TOKEN"],
+  },
+];
+
 export const convexTables = [
   "deployments",
   "deploymentConfigs",
@@ -339,6 +372,8 @@ export function mergeClawConfig(
       partial?.selectedCliIds ?? defaultClawConfig.selectedCliIds,
     selectedToolkitIds:
       partial?.selectedToolkitIds ?? defaultClawConfig.selectedToolkitIds,
+    enabledSurfaceIds:
+      partial?.enabledSurfaceIds ?? defaultClawConfig.enabledSurfaceIds,
   };
 }
 
@@ -667,9 +702,28 @@ export function resolveToolkitDefinitions(config: ClawConfig = defaultClawConfig
     .filter((entry): entry is ToolkitDefinition => Boolean(entry));
 }
 
+export function resolveSurfaceDefinitions(config: ClawConfig = defaultClawConfig) {
+  return config.enabledSurfaceIds
+    .map((id) => surfaceCatalog.find((entry) => entry.id === id))
+    .filter((entry): entry is SurfaceDefinition => Boolean(entry));
+}
+
 export function resolveEnvRequirements(config: ClawConfig = defaultClawConfig) {
   const requiredEnvVars = new Set(config.requiredEnvVars);
   const optionalEnvVars = new Set(config.optionalEnvVars);
+
+  for (const surface of resolveSurfaceDefinitions(config)) {
+    for (const key of surface.requiredEnvVars) {
+      requiredEnvVars.add(key);
+      optionalEnvVars.delete(key);
+    }
+
+    for (const key of surface.optionalEnvVars) {
+      if (!requiredEnvVars.has(key)) {
+        optionalEnvVars.add(key);
+      }
+    }
+  }
 
   for (const toolkit of resolveToolkitDefinitions(config)) {
     for (const key of toolkit.requiredEnvVars) {

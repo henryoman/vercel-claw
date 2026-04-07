@@ -9,7 +9,7 @@ import {
 describe("read tool path resolution", () => {
   test("resolves shipped tool paths under tools/", async () => {
     const resolved = await resolveTargetValue("notion/mcp.json");
-    expect(resolved.endsWith("/tools/notion/mcp.json")).toBe(true);
+    expect(resolved.endsWith("/tools/included/notion/mcp.json")).toBe(true);
   });
 
   test("resolves toolId plus relative path under shipped tool dir", () => {
@@ -23,7 +23,7 @@ describe("read tool path resolution", () => {
       includeSkills: true,
     });
 
-    expect(targets).toContain("tools/notion/mcp.json");
+    expect(targets).toContain("tools/included/notion/mcp.json");
     expect(targets.some((target) => target.includes("packages/tools/"))).toBe(false);
   });
 
@@ -37,7 +37,7 @@ describe("read tool path resolution", () => {
     if (result.kind !== "file") {
       throw new Error("Expected a file result.");
     }
-    expect(result.path).toBe("tools/notion/mcp.json");
+    expect(result.path).toBe("tools/included/notion/mcp.json");
   });
 });
 

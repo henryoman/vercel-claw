@@ -2,7 +2,7 @@ import {
   defineToolModule,
   type ShippedToolInstallSpec,
   type ShippedToolRuntimeSpec,
-} from "../manifest-types";
+} from "../../manifest-types";
 
 const installSpec: ShippedToolInstallSpec = {
   id: "posthog",
@@ -35,9 +35,9 @@ const runtimeSpec: ShippedToolRuntimeSpec = {
     "PostHog MCP access for analytics, dashboards, feature flags, experiments, logs, and docs.",
   mcpServerName: "posthog",
   defaultReadTargets: [
-    "tools/posthog/README.md",
-    "tools/posthog/mcp.json",
-    "tools/posthog/knowledge/mcp-docs.md",
+    "tools/add-on/posthog/README.md",
+    "tools/add-on/posthog/mcp.json",
+    "tools/add-on/posthog/knowledge/mcp-docs.md",
   ],
   capabilities: [
     "Project-scoped PostHog MCP access",

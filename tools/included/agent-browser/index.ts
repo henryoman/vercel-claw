@@ -2,7 +2,7 @@ import {
   defineToolModule,
   type ShippedToolInstallSpec,
   type ShippedToolRuntimeSpec,
-} from "../manifest-types";
+} from "../../manifest-types";
 
 const installSpec: ShippedToolInstallSpec = {
   id: "agent-browser",
@@ -43,9 +43,9 @@ const runtimeSpec: ShippedToolRuntimeSpec = {
   docsFile: "knowledge/about.md",
   description: "Browser automation tool powered by the agent-browser CLI.",
   defaultReadTargets: [
-    "tools/agent-browser/README.md",
-    "tools/agent-browser/mcp.json",
-    "tools/agent-browser/knowledge/about.md",
+    "tools/included/agent-browser/README.md",
+    "tools/included/agent-browser/mcp.json",
+    "tools/included/agent-browser/knowledge/about.md",
   ],
   capabilities: [
     "Browser automation and page interaction",

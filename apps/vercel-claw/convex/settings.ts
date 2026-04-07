@@ -97,7 +97,7 @@ export const upsert = mutation({
 
 async function ensureScopeDefaults(
   ctx: MutationCtx,
-  scope: "global" | "web" | "telegram",
+  scope: "global" | "web" | "telegram" | "slack",
   defaults: Array<{ key: string; label: string; value: string }>,
 ) {
   const now = Date.now();

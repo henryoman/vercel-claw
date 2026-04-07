@@ -3,6 +3,7 @@ import { v } from "convex/values";
 export const surfaceValidator = v.union(
   v.literal("web"),
   v.literal("telegram"),
+  v.literal("slack"),
 );
 
 export const threadStatusValidator = v.union(
@@ -42,6 +43,7 @@ export const settingScopeValidator = v.union(
   v.literal("global"),
   v.literal("web"),
   v.literal("telegram"),
+  v.literal("slack"),
 );
 
 export const threadSummaryValidator = v.object({

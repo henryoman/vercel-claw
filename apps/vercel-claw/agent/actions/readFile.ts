@@ -1,4 +1,4 @@
-import { CLAW_CONFIG_FILE, type ToolSourceManifest } from "@vercel-claw/core";
+import { CLAW_CONFIG_FILE, getToolManifest, type ToolSourceManifest } from "@vercel-claw/core";
 import { tool } from "ai";
 import { isUtf8 } from "node:buffer";
 import { existsSync } from "node:fs";
@@ -143,7 +143,7 @@ export async function resolveTargetValue(target: string) {
   }
 
   if (!target.includes("/")) {
-    const toolRoot = resolve(workspaceRoot, "tools", target);
+    const toolRoot = resolveManifestToolRoot(target);
     if (existsSync(toolRoot)) {
       return await resolveDefaultToolDocPath(target);
     }
@@ -155,7 +155,7 @@ export async function resolveTargetValue(target: string) {
   }
 
   const [toolId, ...rest] = target.split("/");
-  const toolRoot = toolId ? resolve(workspaceRoot, "tools", toolId) : null;
+  const toolRoot = toolId ? resolveManifestToolRoot(toolId) : null;
   const workspacePath = resolve(workspaceRoot, target);
 
   if (toolRoot && existsSync(toolRoot) && !existsSync(workspacePath) && rest.length > 0) {
@@ -250,7 +250,9 @@ function normalizeReadTargets(input: ReadInput) {
 
   if (input.path) {
     if (input.toolId && !input.path.startsWith("tools/")) {
-      return [`tools/${input.toolId}/${trimLeadingSlashes(input.path)}`];
+      const manifest = getToolManifest(input.toolId);
+      const toolRoot = manifest?.shippedToolDir ?? `tools/${input.toolId}`;
+      return [`${toolRoot}/${trimLeadingSlashes(input.path)}`];
     }
 
     return [trimLeadingSlashes(input.path)];
@@ -326,7 +328,7 @@ function resolveToolScopedPath(toolId: string, inputPath: string) {
     throw new Error("read expects a repo-relative tool path, not an absolute path.");
   }
 
-  const toolRoot = resolveWorkspacePath(`tools/${toolId}`);
+  const toolRoot = resolveManifestToolRoot(toolId);
   const absolutePath = resolve(toolRoot, inputPath);
   const relativePath = toRepoPath(relative(toolRoot, absolutePath));
 
@@ -342,7 +344,7 @@ function resolveToolScopedPath(toolId: string, inputPath: string) {
 }
 
 async function resolveDefaultToolDocPath(toolId: string) {
-  const toolRoot = resolveWorkspacePath(`tools/${toolId}`);
+  const toolRoot = resolveManifestToolRoot(toolId);
 
   for (const candidate of TOOL_DOC_CANDIDATES) {
     const absoluteCandidate = join(toolRoot, candidate);
@@ -366,6 +368,15 @@ async function resolveDefaultToolDocPath(toolId: string) {
   throw new Error(
     `Could not find default docs for tool "${toolId}". Try a repo-relative path like tools/${toolId}/README.md instead.`,
   );
+}
+
+function resolveManifestToolRoot(toolId: string) {
+  const manifest = getToolManifest(toolId);
+  if (!manifest) {
+    return resolve(workspaceRoot, "tools", toolId);
+  }
+
+  return resolveWorkspacePath(manifest.shippedToolDir);
 }
 
 async function readDirectory(absolutePath: string) {

@@ -2,7 +2,7 @@ import {
   defineToolModule,
   type ShippedToolInstallSpec,
   type ShippedToolRuntimeSpec,
-} from "../manifest-types";
+} from "../../manifest-types";
 
 const installSpec: ShippedToolInstallSpec = {
   id: "weather",
@@ -26,9 +26,9 @@ const runtimeSpec: ShippedToolRuntimeSpec = {
   docsFile: "README.md",
   description: "Deterministic weather lookup through a fixed Bun wrapper.",
   defaultReadTargets: [
-    "tools/weather/README.md",
-    "tools/weather/run.ts",
-    "tools/weather/wttr.md",
+    "tools/add-on/weather/README.md",
+    "tools/add-on/weather/run.ts",
+    "tools/add-on/weather/wttr.md",
   ],
   capabilities: [
     "Deterministic weather lookup for an explicit location",

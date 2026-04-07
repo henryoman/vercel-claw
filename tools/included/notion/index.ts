@@ -2,7 +2,7 @@ import {
   defineToolModule,
   type ShippedToolInstallSpec,
   type ShippedToolRuntimeSpec,
-} from "../manifest-types";
+} from "../../manifest-types";
 
 const installSpec: ShippedToolInstallSpec = {
   id: "notion",
@@ -27,9 +27,9 @@ const runtimeSpec: ShippedToolRuntimeSpec = {
   description: "Hosted Notion MCP connection metadata and docs for workspace access.",
   mcpServerName: "notion",
   defaultReadTargets: [
-    "tools/notion/README.md",
-    "tools/notion/mcp.json",
-    "tools/notion/mcp-docs.md",
+    "tools/included/notion/README.md",
+    "tools/included/notion/mcp.json",
+    "tools/included/notion/mcp-docs.md",
   ],
   capabilities: [
     "Hosted MCP server metadata",

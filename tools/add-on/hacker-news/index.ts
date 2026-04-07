@@ -1,4 +1,4 @@
-import { defineToolModule, type ShippedToolRuntimeSpec } from "../manifest-types";
+import { defineToolModule, type ShippedToolRuntimeSpec } from "../../manifest-types";
 
 const runtimeSpec: ShippedToolRuntimeSpec = {
   id: "hacker-news",
@@ -7,8 +7,8 @@ const runtimeSpec: ShippedToolRuntimeSpec = {
   docsFile: "README.md",
   description: "Scratch notes for a possible Hacker News integration.",
   defaultReadTargets: [
-    "tools/hacker-news/README.md",
-    "tools/hacker-news/notes.txt",
+    "tools/add-on/hacker-news/README.md",
+    "tools/add-on/hacker-news/notes.txt",
   ],
   capabilities: [
     "Placeholder notes for future Hacker News tooling",

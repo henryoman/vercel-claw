@@ -1,0 +1,13 @@
+#!/usr/bin/env bun
+
+const entrypoint = new URL("../dist/index.js", import.meta.url);
+const child = Bun.spawn({
+  cmd: ["bun", entrypoint.pathname, "create", ...Bun.argv.slice(2)],
+  cwd: process.cwd(),
+  stdin: "inherit",
+  stdout: "inherit",
+  stderr: "inherit",
+});
+
+const exitCode = await child.exited;
+process.exit(exitCode);

@@ -35,6 +35,34 @@ afterEach(async () => {
 });
 
 describe("tool CLI end-to-end", () => {
+  test("scaffolds a new workspace with the create command", async () => {
+    const parentRoot = await createTempDir("vercel-claw-create-");
+    const targetRoot = join(parentRoot, "my-agent");
+
+    const createResult = await runCli(parentRoot, ["create", "my-agent", "--defaults"], {});
+
+    expect(createResult.exitCode).toBe(0);
+    expect(existsSync(join(targetRoot, "vercel-claw.config.json"))).toBe(true);
+    expect(existsSync(join(targetRoot, "apps", "vercel-claw", ".env.local"))).toBe(true);
+    expect(existsSync(join(targetRoot, "deployments", "deployment.json"))).toBe(true);
+
+    const config = await Bun.file(join(targetRoot, "vercel-claw.config.json")).json();
+    expect(config).toMatchObject({
+      name: "my-agent",
+      enabledSurfaceIds: ["web"],
+    });
+
+    const packageJson = await Bun.file(join(targetRoot, "package.json")).json();
+    expect(packageJson).toMatchObject({
+      name: "my-agent",
+    });
+
+    const settingsResult = await runCli(targetRoot, ["settings", "show"], {});
+    expect(settingsResult.exitCode).toBe(0);
+    expect(settingsResult.stdout).toContain("Name: my-agent");
+    expect(settingsResult.stdout).toContain("Surfaces: web");
+  });
+
   test("lists registry tools, installs a downloaded bundle, and prints the installed path", async () => {
     const workspaceRoot = await createWorkspace();
     const cliHome = await createTempDir("vercel-claw-home-");

@@ -1,7 +1,7 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
-const surface = v.union(v.literal("web"), v.literal("telegram"));
+const surface = v.union(v.literal("web"), v.literal("telegram"), v.literal("slack"));
 const threadStatus = v.union(
   v.literal("idle"),
   v.literal("running"),
@@ -15,7 +15,7 @@ const messageRole = v.union(
   v.literal("tool"),
 );
 const artifactKind = v.union(v.literal("file"), v.literal("note"), v.literal("result"));
-const settingScope = v.union(v.literal("global"), v.literal("web"), v.literal("telegram"));
+const settingScope = v.union(v.literal("global"), v.literal("web"), v.literal("telegram"), v.literal("slack"));
 const instanceGateMode = v.union(
   v.literal("member"),
   v.literal("password"),
