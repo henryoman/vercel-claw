@@ -91,10 +91,10 @@ function mockTool(): ToolSourceManifest {
     runtime: "mcp",
     docsFile: "knowledge/mcp-docs.md",
     mcpServerName: "notion",
-    defaultReadTargets: ["packages/tools/notion/README.md"],
+    defaultReadTargets: ["tools/notion/README.md"],
     capabilities: ["Read workspace pages", "Query databases", "Retrieve tool docs"],
     contextHints: [],
     promptHints: [],
-    shippedToolDir: "packages/tools/notion",
+    shippedToolDir: "tools/notion",
   };
 }

@@ -1,0 +1,9 @@
+{
+  "name": "@vercel-claw/tool-posthog",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "ai": "^6.0.149",
+    "zod": "^4.3.6"
+  }
+}

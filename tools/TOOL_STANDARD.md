@@ -56,7 +56,7 @@ The preferred standard is:
 
 - define the executable input contract in Zod
 - validate the tool input at runtime with that Zod schema
-- mirror the same contract in `activate.ts` so the model gets a compact description of operations and arguments
+- mirror the same contract in `index.ts` so the model gets a compact description of operations and arguments
 
 If a tool is directly callable and does not have a real validated input schema, it is incomplete.
 
@@ -66,9 +66,8 @@ Every real tool directory should have:
 
 ```txt
 tools/<tool-id>/
+  index.ts              # required single entrypoint
   README.md
-  install.ts            # if the tool needs install-time behavior
-  activate.ts           # required for anything exposed to the model
 ```
 
 Additional files are required by tool type:
@@ -78,9 +77,15 @@ Additional files are required by tool type:
 - Knowledge-heavy tool: extra docs such as `about.md`, `basics.md`, or targeted knowledge files
 - Skill-backed tool: `skills/` with task-oriented guidance
 
-## `activate.ts` Requirements
+`index.ts` is the source of truth. It should export a single tool module that contains:
 
-`activate.ts` is the model-facing contract. It must answer all of these:
+- install metadata when the tool is shipped
+- runtime metadata for discovery and docs
+- no duplicated split contract across separate `activate.ts` and `install.ts` files
+
+## `index.ts` Requirements
+
+`index.ts` is the model-facing contract. It must answer all of these:
 
 - What is this tool for?
 - When should the model use it?
@@ -129,12 +134,12 @@ For directly callable tools, use this rule:
 1. The executable code owns the real schema.
 2. The real schema should be written in Zod.
 3. Runtime code must validate inputs against that schema before execution.
-4. `activate.ts` mirrors the callable surface in a model-friendly format.
+4. `index.ts` mirrors the callable surface in a model-friendly format.
 
 That means:
 
 - Zod is the validation source of truth.
-- `activate.ts` is the discovery and guidance layer.
+- `index.ts` is the discovery and guidance layer.
 - README and docs explain intent, examples, and boundaries.
 
 ## Description Standard
@@ -219,7 +224,7 @@ Before adding or shipping a tool, check:
 
 - Is this tool directly callable by the model
 - If yes, where is the Zod schema
-- Does `activate.ts` mirror the callable operations
+- Does `index.ts` mirror the callable operations
 - Does the README explain usage boundaries
 - Does the tool expose examples for ambiguous arguments
 - Does the model know what output to expect

@@ -85,3 +85,18 @@ export interface ShippedToolRuntimeSpec {
   fallbackConnection?: ShippedToolConnectionSpec;
   execution?: ShippedToolExecutionSpec;
 }
+
+export interface ToolModule {
+  installSpec: ShippedToolInstallSpec | null;
+  runtimeSpec: ShippedToolRuntimeSpec;
+}
+
+export function defineToolModule(toolModule: ToolModule) {
+  if (toolModule.installSpec && toolModule.installSpec.id !== toolModule.runtimeSpec.id) {
+    throw new Error(
+      `Tool module id mismatch: install spec "${toolModule.installSpec.id}" does not match runtime spec "${toolModule.runtimeSpec.id}".`,
+    );
+  }
+
+  return toolModule;
+}

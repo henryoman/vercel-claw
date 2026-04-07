@@ -11,6 +11,7 @@
     "dev": "turbo run dev --filter=@vercel-claw/cli -- dev",
     "dev:app": "turbo run dev --filter=@vercel-claw/app",
     "cli": "turbo run dev --filter=@vercel-claw/cli",
+    "studio": "bun run ./scripts/studio.ts",
     "convex:once": "set -a && . ./.env.local && set +a && cd apps/vercel-claw && bunx convex dev --once --tail-logs disable",
     "lint": "oxlint .",
     "build:tools": "turbo run build:tools --filter=@vercel-claw/cli",

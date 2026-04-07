@@ -11,7 +11,7 @@ import {
   fileReadResultSchema,
   readToolResultSchema,
   singleReadResultSchema,
-} from "../tool-contracts";
+} from "../tool-exec/tool-contracts";
 
 const DEFAULT_LINE_WINDOW = 220;
 const MAX_LINE_WINDOW = 400;
@@ -112,11 +112,11 @@ export function resolveToolContextTargets(
 
   const customTargets =
     input.targets?.map((target) => {
-      if (target.startsWith("packages/tools/") || target.startsWith("tool:")) {
+      if (target.startsWith("tools/") || target.startsWith("tool:")) {
         return normalizeSingleTarget(target);
       }
 
-      return `packages/tools/${tool.id}/${trimLeadingSlashes(target)}`;
+      return `${tool.shippedToolDir}/${trimLeadingSlashes(target)}`;
     }) ?? [];
 
   return Array.from(new Set([...defaults, ...customTargets]));
@@ -143,19 +143,19 @@ export async function resolveTargetValue(target: string) {
   }
 
   if (!target.includes("/")) {
-    const toolRoot = resolve(workspaceRoot, "packages", "tools", target);
+    const toolRoot = resolve(workspaceRoot, "tools", target);
     if (existsSync(toolRoot)) {
       return await resolveDefaultToolDocPath(target);
     }
     return resolveWorkspacePath(target);
   }
 
-  if (target.startsWith("packages/tools/")) {
+  if (target.startsWith("tools/")) {
     return resolveWorkspacePath(target);
   }
 
   const [toolId, ...rest] = target.split("/");
-  const toolRoot = toolId ? resolve(workspaceRoot, "packages", "tools", toolId) : null;
+  const toolRoot = toolId ? resolve(workspaceRoot, "tools", toolId) : null;
   const workspacePath = resolve(workspaceRoot, target);
 
   if (toolRoot && existsSync(toolRoot) && !existsSync(workspacePath) && rest.length > 0) {
@@ -249,8 +249,8 @@ function normalizeReadTargets(input: ReadInput) {
   }
 
   if (input.path) {
-    if (input.toolId && !input.path.startsWith("packages/tools/")) {
-      return [`packages/tools/${input.toolId}/${trimLeadingSlashes(input.path)}`];
+    if (input.toolId && !input.path.startsWith("tools/")) {
+      return [`tools/${input.toolId}/${trimLeadingSlashes(input.path)}`];
     }
 
     return [trimLeadingSlashes(input.path)];
@@ -326,7 +326,7 @@ function resolveToolScopedPath(toolId: string, inputPath: string) {
     throw new Error("read expects a repo-relative tool path, not an absolute path.");
   }
 
-  const toolRoot = resolveWorkspacePath(`packages/tools/${toolId}`);
+  const toolRoot = resolveWorkspacePath(`tools/${toolId}`);
   const absolutePath = resolve(toolRoot, inputPath);
   const relativePath = toRepoPath(relative(toolRoot, absolutePath));
 
@@ -342,7 +342,7 @@ function resolveToolScopedPath(toolId: string, inputPath: string) {
 }
 
 async function resolveDefaultToolDocPath(toolId: string) {
-  const toolRoot = resolveWorkspacePath(`packages/tools/${toolId}`);
+  const toolRoot = resolveWorkspacePath(`tools/${toolId}`);
 
   for (const candidate of TOOL_DOC_CANDIDATES) {
     const absoluteCandidate = join(toolRoot, candidate);
@@ -364,7 +364,7 @@ async function resolveDefaultToolDocPath(toolId: string) {
   }
 
   throw new Error(
-    `Could not find default docs for tool "${toolId}". Try a repo-relative path like packages/tools/${toolId}/README.md instead.`,
+    `Could not find default docs for tool "${toolId}". Try a repo-relative path like tools/${toolId}/README.md instead.`,
   );
 }
 

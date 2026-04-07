@@ -1,5 +1,5 @@
 import type { ToolSourceManifest } from "@vercel-claw/core";
-import type { ToolContextIndex } from "../tool-contracts";
+import type { ToolContextIndex } from "../tool-exec/tool-contracts";
 
 export function buildToolContextIndex(
   manifest: ToolSourceManifest,

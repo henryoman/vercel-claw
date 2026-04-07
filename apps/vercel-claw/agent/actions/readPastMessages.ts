@@ -2,7 +2,7 @@ import { tool } from "ai";
 import { z } from "zod";
 import { getThreadDetail } from "@/lib/server/threads";
 import { getRecentMessages } from "../context-utils/getRecentMessages";
-import { readPastMessagesResultSchema } from "../tool-contracts";
+import { readPastMessagesResultSchema } from "../tool-exec/tool-contracts";
 
 const readPastMessagesInputSchema = z
   .object({

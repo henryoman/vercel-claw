@@ -13,8 +13,8 @@ import { buildToolContextIndex } from "../context-utils/buildToolContextIndex";
 import {
   toolCatalogResultSchema,
   toolContextResultSchema,
-} from "../tool-contracts";
-import { createExecutableTools } from "../tool-execution";
+} from "../tool-exec/tool-contracts";
+import { createExecutableTools } from "../tool-exec/tool-execution";
 import { createPostHogTools } from "./posthog";
 import {
   createReadFileTool,

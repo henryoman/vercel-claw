@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-04-06T05:22:34.550Z",
+  "generatedAt": "2026-04-06T21:15:22.040Z",
   "sourceRepo": "https://github.com/henryoman/vercel-claw",
   "tools": [
     {
@@ -12,12 +12,12 @@
       "runtime": "mcp",
       "activationScope": "instance",
       "memberToolIds": [],
-      "docsFile": "knowledge/mcp-docs.md",
+      "docsFile": "mcp-docs.md",
       "mcpServerName": "notion",
       "defaultReadTargets": [
-        "packages/tools/notion/README.md",
-        "packages/tools/notion/mcp.json",
-        "packages/tools/notion/knowledge/mcp-docs.md"
+        "tools/notion/README.md",
+        "tools/notion/mcp.json",
+        "tools/notion/mcp-docs.md"
       ],
       "capabilities": [
         "Hosted MCP server metadata",
@@ -51,9 +51,9 @@
       "verifyCommands": [],
       "bundle": {
         "url": "file:///Volumes/T9/cursor/vercel-claw/.dist/tool-bundles/notion-0.1.0.zip",
-        "sha256": "0a7702b918eef219d11c1582da5bd90d410d005fc97b30a3acb61b3ab519a236",
+        "sha256": "94065696f41a593b5578fbe2194ccfa7bb1e714dc1019ed520275fc3f9abadcd",
         "format": "zip",
-        "sizeBytes": 3354
+        "sizeBytes": 3121
       },
       "metadata": {
         "rootDirectory": "notion",
@@ -74,9 +74,9 @@
       "memberToolIds": [],
       "docsFile": "knowledge/about.md",
       "defaultReadTargets": [
-        "packages/tools/agent-browser/README.md",
-        "packages/tools/agent-browser/mcp.json",
-        "packages/tools/agent-browser/knowledge/about.md"
+        "tools/agent-browser/README.md",
+        "tools/agent-browser/mcp.json",
+        "tools/agent-browser/knowledge/about.md"
       ],
       "capabilities": [
         "Browser automation and page interaction",
@@ -216,16 +216,16 @@
       ],
       "bundle": {
         "url": "file:///Volumes/T9/cursor/vercel-claw/.dist/tool-bundles/agent-browser-0.1.0.zip",
-        "sha256": "ee7cc4726a1b60ebdd6cbb6d803d3c83bd1df87262482e1cf45bb2697789a0ca",
+        "sha256": "97e3df17540350a639a0941538625b6605dbb88160db626a3fb0fac02290bd00",
         "format": "zip",
-        "sizeBytes": 2929
+        "sizeBytes": 3089
       },
       "metadata": {
         "rootDirectory": "agent-browser",
         "mcpConfigPath": "agent-browser/mcp.json",
         "knowledgeDirectory": "agent-browser/knowledge",
         "skillsDirectory": "agent-browser/skills",
-        "readmePath": null
+        "readmePath": "agent-browser/README.md"
       }
     },
     {
@@ -258,16 +258,25 @@
         "Use feature-specific PostHog tools when they exist; fall back to query-run for custom analysis.",
         "If the exact PostHog MCP tool name is unclear, inspect the tool catalog before invoking a broad workflow."
       ],
-      "requiredEnvVars": [],
-      "optionalEnvVars": [],
+      "requiredEnvVars": [
+        "POSTHOG_API_KEY",
+        "POSTHOG_PROJECT_ID"
+      ],
+      "optionalEnvVars": [
+        "POSTHOG_HOST",
+        "POSTHOG_REQUEST_TIMEOUT_MS",
+        "POSTHOG_ENABLE_LOGS",
+        "POSTHOG_ENABLE_FLAGS",
+        "POSTHOG_ENABLE_EXPERIMENTS"
+      ],
       "dependencies": [],
       "installCommands": [],
       "verifyCommands": [],
       "bundle": {
         "url": "file:///Volumes/T9/cursor/vercel-claw/.dist/tool-bundles/posthog-0.1.0.zip",
-        "sha256": "72826803e97459c600c5e0694f6d36c9097d88523df00596916c5f7e43d06b7d",
+        "sha256": "be65b1614ba5eb7506210e1928b520094e95e97cd04dd703d45ada9b0b8565c9",
         "format": "zip",
-        "sizeBytes": 3359
+        "sizeBytes": 3326
       },
       "metadata": {
         "rootDirectory": "posthog",
@@ -334,9 +343,9 @@
       "verifyCommands": [],
       "bundle": {
         "url": "file:///Volumes/T9/cursor/vercel-claw/.dist/tool-bundles/weather-0.1.0.zip",
-        "sha256": "0a0b87bdee2bb6840c7590a0c3bc9eb366750f2440c92af75400fc7c95db3edd",
+        "sha256": "6bf079a4e20eda39f60d55ab819a0ab9c32cd7f019822e18175ea35caa9229d9",
         "format": "zip",
-        "sizeBytes": 13964
+        "sizeBytes": 13747
       },
       "metadata": {
         "rootDirectory": "weather",
@@ -344,6 +353,63 @@
         "knowledgeDirectory": null,
         "skillsDirectory": null,
         "readmePath": "weather/README.md"
+      }
+    },
+    {
+      "id": "google-workspace",
+      "version": "0.1.0",
+      "label": "Google Workspace",
+      "description": "Google Workspace CLI docs and skill pack for Gmail, Calendar, Drive, Docs, Sheets, Chat, and Tasks workflows.",
+      "kind": "cli",
+      "runtime": "metadata",
+      "activationScope": "instance",
+      "memberToolIds": [],
+      "docsFile": "README.md",
+      "defaultReadTargets": [
+        "tools/google-workspace/README.md",
+        "tools/google-workspace/basics.md",
+        "tools/google-workspace/install.sh",
+        "tools/google-workspace/skills/gws-shared/SKILL.md"
+      ],
+      "capabilities": [
+        "Google Workspace CLI setup guidance",
+        "Service-specific command discovery for Gmail, Calendar, Drive, Docs, Sheets, Chat, and Tasks",
+        "Workflow skills for common Google Workspace automation tasks"
+      ],
+      "contextHints": [
+        "Start with basics.md before suggesting service-specific commands.",
+        "Use skills for common workflows, but inspect the raw CLI schema before suggesting write operations."
+      ],
+      "promptHints": [
+        "Discover commands with gws --help and gws schema before guessing flags.",
+        "Quote sheet ranges containing ! when showing zsh examples."
+      ],
+      "requiredEnvVars": [],
+      "optionalEnvVars": [],
+      "dependencies": [],
+      "installCommands": [],
+      "verifyCommands": [
+        {
+          "label": "Check Google Workspace CLI",
+          "command": [
+            "gws",
+            "--help"
+          ],
+          "cwd": "workspace"
+        }
+      ],
+      "bundle": {
+        "url": "file:///Volumes/T9/cursor/vercel-claw/.dist/tool-bundles/google-workspace-0.1.0.zip",
+        "sha256": "fa7e2cb4a488bcde6c6ccafb8a64dcd331f50f079c606abca850d5f65325754d",
+        "format": "zip",
+        "sizeBytes": 54044
+      },
+      "metadata": {
+        "rootDirectory": "google-workspace",
+        "mcpConfigPath": null,
+        "knowledgeDirectory": null,
+        "skillsDirectory": "google-workspace/skills",
+        "readmePath": "google-workspace/README.md"
       }
     }
   ]

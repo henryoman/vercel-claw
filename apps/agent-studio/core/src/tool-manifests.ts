@@ -1,33 +1,16 @@
-import { agentBrowserTool } from "../../../../tools/agent-browser/activate";
-import { agentBrowserInstallSpec } from "../../../../tools/agent-browser/install";
-import type { ShippedToolInstallSpec } from "../../../../tools/manifest-types";
-import { notionTool } from "../../../../tools/notion/activate";
-import { notionInstallSpec } from "../../../../tools/notion/install";
-import { posthogTool } from "../../../../tools/posthog/activate";
-import { posthogInstallSpec } from "../../../../tools/posthog/install";
-import { weatherTool } from "../../../../tools/weather/activate";
-import { weatherInstallSpec } from "../../../../tools/weather/install";
+import { shippedToolModules } from "../../../../tools";
+import type { ToolModule } from "../../../../tools/manifest-types";
 import type { ToolSourceManifest } from "./tool-registry";
 
 export const TOOL_CACHE_DIR = ".vercel-claw-cache/tools";
 
-type ToolRuntimeSource = Pick<
-  ToolSourceManifest,
-  | "runtime"
-  | "docsFile"
-  | "mcpServerName"
-  | "defaultReadTargets"
-  | "capabilities"
-  | "contextHints"
-  | "promptHints"
-  | "recommendedConnection"
-  | "fallbackConnection"
->;
+function createToolManifest(toolModule: ToolModule): ToolSourceManifest {
+  const install = toolModule.installSpec;
+  if (!install) {
+    throw new Error(`Cannot create a shipped manifest for ${toolModule.runtimeSpec.id} without install metadata.`);
+  }
 
-function createToolManifest(
-  install: ShippedToolInstallSpec,
-  runtime: ToolRuntimeSource,
-): ToolSourceManifest {
+  const runtime = toolModule.runtimeSpec;
   return {
     ...install,
     ...runtime,
@@ -36,10 +19,7 @@ function createToolManifest(
 }
 
 export const toolCatalog: ToolSourceManifest[] = [
-  createToolManifest(notionInstallSpec, notionTool),
-  createToolManifest(agentBrowserInstallSpec, agentBrowserTool),
-  createToolManifest(posthogInstallSpec, posthogTool),
-  createToolManifest(weatherInstallSpec, weatherTool),
+  ...shippedToolModules.map((toolModule) => createToolManifest(toolModule)),
 ];
 
 export function listToolManifests() {

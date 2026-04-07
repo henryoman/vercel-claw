@@ -33,7 +33,6 @@
     "app/**/*.ts",
     "app/**/*.tsx",
     "agent/**/*.ts",
-    "workflows/**/*.ts",
     "components/**/*.ts",
     "components/**/*.tsx",
     "lib/connectors/**/*.ts",

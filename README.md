@@ -74,10 +74,10 @@ Each deployed instance gets its own persistent sandbox. Each thread gets its own
 
 `tools/` is the shipped tool source of truth.
 
-Each tool directory is the repo-owned definition of a tool: docs for the model, the model-facing contract in `activate.ts`, optional install behavior in `install.ts`, and runtime code such as `run.ts` when the tool is directly executable.
+Each tool directory is the repo-owned definition of a tool: docs for the model, a single `index.ts` entrypoint for metadata, optional runtime code such as `run.ts` when the tool is directly executable, and any extra files like `mcp.json`, knowledge docs, or skills.
 
 The basic idea is:
-- `tools/<tool-id>/activate.ts` tells the model what the tool is, when to use it, and which operations exist
+- `tools/<tool-id>/index.ts` is the single entrypoint for install metadata and the model-facing runtime contract
 - tool docs explain usage boundaries and examples
 - executable tools provide real runtime code and validated inputs
 - deployment config decides which tools are installed for a deployment and which installed tools are exposed to an instance

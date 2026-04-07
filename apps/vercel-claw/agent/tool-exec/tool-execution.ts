@@ -17,7 +17,7 @@ import {
   getOrCreateInstanceSandbox,
 } from "@/lib/server/sandbox/manager";
 import { finishSandboxRun, startSandboxRun } from "@/lib/server/sandbox-runs";
-import { executableToolResultSchema, type ExecutableToolResult } from "./tool-exec/tool-contracts";
+import { executableToolResultSchema, type ExecutableToolResult } from "./tool-contracts";
 
 const toolArgumentScalarSchema = z.union([z.string(), z.number(), z.boolean()]);
 

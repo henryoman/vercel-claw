@@ -2,7 +2,7 @@
 
 This is the shipped folder for the built-in `notion` tool.
 
-This folder is part of the deployment-level tool library under `packages/tools/notion`.
+This folder lives under `tools/notion`.
 
 Whether the tool is installed for a deployment is controlled by:
 
@@ -22,6 +22,6 @@ This folder contains the stable, versioned source-of-truth files for the tool:
 - `mcp.json` for MCP connection metadata
 - `skills/` for workflow-oriented docs
 - `knowledge/` for tool-specific docs and references
-- activation metadata
+- `index.ts` as the single module entrypoint
 
 It should not fetch arbitrary "latest" tool definitions from the internet during activation.
